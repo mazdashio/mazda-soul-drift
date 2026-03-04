@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAZDA SOUL DRIFT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Three.js Canvas will be inserted here -->
+  
+  <!-- HUD Overlay -->
+  <div id="hud" style="display:none;">
+    <div id="hud-top">
+      <span id="hud-time">TIME 0:00.000</span>
+      <span id="hud-lap">LAP 1/3</span>
+      <span id="hud-speed">0 km/h</span>
+    </div>
+    <div id="hud-bottom">
+      <div id="hud-progress-bar">
+        <div id="hud-progress-fill"></div>
+      </div>
+      <span id="hud-score">SCORE: 0</span>
+    </div>
+    <div id="hud-corner-name"></div>
+  </div>
+
+  <!-- Drift Ring Canvas (2D overlay) -->
+  <canvas id="drift-canvas" style="display:none;"></canvas>
+
+  <!-- Judgment Display -->
+  <div id="judgment-display"></div>
+
+  <!-- Title Screen -->
+  <div id="title-screen">
+    <div id="title-content">
+      <h1 id="title-logo">MAZDA SOUL DRIFT</h1>
+      <p id="title-sub">FUJI SPEEDWAY &times; 3 LAPS</p>
+      <p id="title-start">CLICK TO START</p>
+      <div id="title-controls">
+        <p>&#128433; Mouse Left/Right &rarr; Steering</p>
+        <p>&#128433; Click &rarr; Drift</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Car Select Screen -->
+  <div id="select-screen" style="display:none;">
+    <h2 id="select-title">SELECT YOUR CAR</h2>
+    <div id="car-cards"></div>
+    <button id="start-race-btn">START RACE</button>
+  </div>
+
+  <!-- Countdown -->
+  <div id="countdown" style="display:none;">
+    <span id="countdown-text"></span>
+  </div>
+
+  <!-- Result Screen -->
+  <div id="result-screen" style="display:none;">
+    <div id="result-content">
+      <h2>FINISH!</h2>
+      <div id="result-time"></div>
+      <div id="result-laps"></div>
+      <div id="result-score"></div>
+      <div id="result-judgments"></div>
+      <div id="result-buttons">
+        <button id="retry-btn">RETRY</button>
+        <button id="change-car-btn">CHANGE CAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/course.js"></script>
+  <script src="js/car.js"></script>
+  <script src="js/drift.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

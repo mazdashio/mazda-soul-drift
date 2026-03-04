@@ -1,0 +1,406 @@
+/* MAZDA SOUL DRIFT - Styles */
+:root {
+  --mazda-red: #A80000;
+  --mazda-red-bright: #C41E3A;
+  --mazda-dark: #0A0A0A;
+  --mazda-gray: #1A1A1A;
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255,255,255,0.5);
+  --perfect: #00FF88;
+  --great: #FFD700;
+  --good: #FF8800;
+  --miss: #FF3344;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  background: var(--mazda-dark);
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text-primary);
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+canvas {
+  display: block;
+}
+
+/* ===== Title Screen ===== */
+#title-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, var(--mazda-dark) 0%, #1a0000 50%, var(--mazda-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#title-content {
+  text-align: center;
+}
+
+#title-logo {
+  font-size: 72px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--mazda-red);
+  text-shadow: 0 0 40px rgba(168,0,0,0.6), 0 0 80px rgba(168,0,0,0.3);
+  margin-bottom: 16px;
+}
+
+#title-sub {
+  font-size: 24px;
+  color: var(--text-secondary);
+  letter-spacing: 6px;
+  margin-bottom: 60px;
+}
+
+#title-start {
+  font-size: 28px;
+  color: var(--text-primary);
+  letter-spacing: 4px;
+  animation: blink 1.2s ease-in-out infinite;
+  margin-bottom: 40px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+#title-controls {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 2;
+}
+
+/* ===== Car Select Screen ===== */
+#select-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, var(--mazda-dark) 0%, #0a0005 100%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#select-title {
+  font-size: 36px;
+  letter-spacing: 6px;
+  color: var(--mazda-red);
+  margin-bottom: 40px;
+}
+
+#car-cards {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.car-card {
+  width: 180px;
+  padding: 20px 16px;
+  background: var(--mazda-gray);
+  border: 2px solid #333;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.car-card:hover {
+  border-color: var(--mazda-red);
+  transform: translateY(-4px);
+}
+
+.car-card.selected {
+  border-color: var(--mazda-red-bright);
+  transform: scale(1.08);
+  box-shadow: 0 0 30px rgba(168,0,0,0.4);
+}
+
+.car-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.car-card-year {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.car-card-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  border: 2px solid #555;
+}
+
+.car-param {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.car-param-bar {
+  width: 80px;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.car-param-fill {
+  height: 100%;
+  background: var(--mazda-red);
+  border-radius: 3px;
+}
+
+.car-card-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+#start-race-btn {
+  font-size: 24px;
+  padding: 16px 60px;
+  background: var(--mazda-red);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 4px;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+#start-race-btn:hover {
+  background: var(--mazda-red-bright);
+  transform: scale(1.05);
+}
+
+/* ===== Countdown ===== */
+#countdown {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  pointer-events: none;
+}
+
+#countdown-text {
+  font-size: 160px;
+  font-weight: 900;
+  color: var(--text-primary);
+  text-shadow: 0 0 60px rgba(168,0,0,0.8);
+  animation: countPulse 0.6s ease-out;
+}
+
+@keyframes countPulse {
+  0% { transform: scale(2); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== HUD ===== */
+#hud {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
+
+#hud-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+#hud-speed {
+  color: #FFA500;
+}
+
+#hud-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 12px 24px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+#hud-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#hud-progress-fill {
+  height: 100%;
+  background: var(--mazda-red);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+#hud-score {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+#hud-corner-name {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -120px);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: rgba(255,255,255,0.8);
+  text-shadow: 0 0 20px rgba(168,0,0,0.6);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* ===== Drift Canvas ===== */
+#drift-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 55;
+  pointer-events: none;
+}
+
+/* ===== Judgment Display ===== */
+#judgment-display {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  text-shadow: 0 0 30px currentColor;
+}
+
+/* ===== Result Screen ===== */
+#result-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(10,10,10,0.92);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#result-content {
+  text-align: center;
+  max-width: 500px;
+}
+
+#result-content h2 {
+  font-size: 56px;
+  color: var(--mazda-red);
+  letter-spacing: 8px;
+  margin-bottom: 30px;
+  text-shadow: 0 0 40px rgba(168,0,0,0.6);
+}
+
+#result-time {
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 20px;
+  letter-spacing: 3px;
+}
+
+#result-laps {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+#result-score {
+  font-size: 28px;
+  color: var(--great);
+  margin-bottom: 16px;
+}
+
+#result-judgments {
+  font-size: 16px;
+  margin-bottom: 30px;
+  line-height: 1.8;
+}
+
+#result-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+#result-buttons button {
+  padding: 14px 32px;
+  font-size: 18px;
+  font-weight: 700;
+  border: 2px solid var(--mazda-red);
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  color: white;
+  transition: all 0.2s;
+}
+
+#retry-btn {
+  background: var(--mazda-red);
+}
+
+#retry-btn:hover {
+  background: var(--mazda-red-bright);
+}
+
+#change-car-btn {
+  background: transparent;
+}
+
+#change-car-btn:hover {
+  background: var(--mazda-red);
+}
