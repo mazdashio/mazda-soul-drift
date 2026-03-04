@@ -7,6 +7,8 @@ var UIManager = (function() {
   
   var elements = {};
   var judgmentTimer = null;
+  var boostFlashTimer = null;
+  var speedLinesTimer = null;
   
   function init() {
     elements.hud = document.getElementById('hud');
@@ -23,6 +25,21 @@ var UIManager = (function() {
     elements.resultScreen = document.getElementById('result-screen');
     elements.judgmentDisplay = document.getElementById('judgment-display');
     elements.carCards = document.getElementById('car-cards');
+
+    // Boost visuals (created dynamically so index.html stays minimal)
+    elements.boostOverlay = document.getElementById('boost-overlay');
+    if (!elements.boostOverlay) {
+      elements.boostOverlay = document.createElement('div');
+      elements.boostOverlay.id = 'boost-overlay';
+      document.body.appendChild(elements.boostOverlay);
+    }
+
+    elements.speedLines = document.getElementById('speed-lines');
+    if (!elements.speedLines) {
+      elements.speedLines = document.createElement('div');
+      elements.speedLines.id = 'speed-lines';
+      document.body.appendChild(elements.speedLines);
+    }
   }
   
   function showScreen(name) {
@@ -35,21 +52,33 @@ var UIManager = (function() {
   
   function updateHUD(data) {
     if (elements.hudTime) {
-      elements.hudTime.textContent = 'TIME ' + formatTime(data.time);
+      elements.hudTime.textContent = 'タイム ' + formatTime(data.time);
     }
     if (elements.hudLap) {
-      elements.hudLap.textContent = 'LAP ' + data.lap + '/' + TOTAL_LAPS;
+      elements.hudLap.textContent = 'ラップ ' + data.lap + '/' + TOTAL_LAPS;
     }
     if (elements.hudSpeed) {
       var displaySpeed = Math.floor(data.speed * 280); // visual km/h
       elements.hudSpeed.textContent = displaySpeed + ' km/h';
-      elements.hudSpeed.style.color = data.boosting ? '#FF8800' : '#FFA500';
+      var bm = data.boostMul || 0;
+      elements.hudSpeed.style.color = (bm > 0) ? '#FF8800' : (bm < 0 ? '#FF3344' : '#FFA500');
+      // Pulse size when boosting for visual feedback (A-2)
+      var scale = 1.0;
+      if (bm > 0) scale = 1.0 + bm * 0.15;   // grow slightly when boosted
+      else if (bm < 0) scale = 0.92;          // shrink slightly when penalised
+      elements.hudSpeed.style.transform = 'scale(' + scale + ')';
+    }
+
+    // Continuous boost visuals (speed lines) only for positive boost
+    if (elements.speedLines) {
+      var active = (data.boosting && (data.boostMul || 0) > 0);
+      elements.speedLines.classList.toggle('active', !!active);
     }
     if (elements.hudProgressFill) {
       elements.hudProgressFill.style.width = (data.progress * 100) + '%';
     }
     if (elements.hudScore) {
-      elements.hudScore.textContent = 'SCORE: ' + data.score.toLocaleString();
+      elements.hudScore.textContent = 'スコア: ' + data.score.toLocaleString();
     }
   }
   
@@ -68,6 +97,40 @@ var UIManager = (function() {
     return '' + n;
   }
   
+  function triggerBoostEffect(boostMul, boostDurationSec) {
+    if (!elements.boostOverlay) return;
+
+    clearTimeout(boostFlashTimer);
+
+    // Flash for boost / penalty
+    elements.boostOverlay.classList.remove('flash');
+    elements.boostOverlay.classList.remove('penalty');
+
+    if (boostMul > 0) {
+      elements.boostOverlay.classList.add('flash');
+    } else if (boostMul < 0) {
+      elements.boostOverlay.classList.add('penalty');
+    }
+
+    boostFlashTimer = setTimeout(function() {
+      if (!elements.boostOverlay) return;
+      elements.boostOverlay.classList.remove('flash');
+      elements.boostOverlay.classList.remove('penalty');
+    }, 250);
+
+    // Keep speed lines for the boost duration (positive only)
+    if (elements.speedLines) {
+      clearTimeout(speedLinesTimer);
+      if (boostMul > 0) {
+        elements.speedLines.classList.add('active');
+        speedLinesTimer = setTimeout(function() {
+          if (!elements.speedLines) return;
+          elements.speedLines.classList.remove('active');
+        }, Math.max(0, boostDurationSec || 0) * 1000);
+      }
+    }
+  }
+
   function showJudgment(judge) {
     var el = elements.judgmentDisplay;
     el.textContent = judge.label;
@@ -91,10 +154,10 @@ var UIManager = (function() {
     if (lap > TOTAL_LAPS) return;
     
     if (lap === TOTAL_LAPS) {
-      el.textContent = 'FINAL LAP!';
+      el.textContent = 'ファイナルラップ！';
       el.style.color = '#FF3344';
     } else {
-      el.textContent = 'LAP ' + lap + '/' + TOTAL_LAPS;
+      el.textContent = 'ラップ ' + lap + '/' + TOTAL_LAPS;
       el.style.color = '#FFFFFF';
     }
     el.style.opacity = '1';
@@ -170,12 +233,12 @@ var UIManager = (function() {
     
     var lapsHtml = '';
     for (var i = 0; i < data.lapTimes.length; i++) {
-      lapsHtml += 'LAP ' + (i+1) + ': ' + formatTime(data.lapTimes[i]) + '<br>';
+      lapsHtml += 'ラップ ' + (i+1) + ': ' + formatTime(data.lapTimes[i]) + '<br>';
     }
     document.getElementById('result-laps').innerHTML = lapsHtml;
     
     document.getElementById('result-score').textContent = 
-      'DRIFT SCORE: ' + data.score.toLocaleString();
+      'ドリフトスコア: ' + data.score.toLocaleString();
     
     var jHtml = '<span style="color:#00FF88">PERFECT: ' + data.judgments.perfect + '</span> | ' +
                 '<span style="color:#FFD700">GREAT: ' + data.judgments.great + '</span> | ' +
@@ -189,6 +252,7 @@ var UIManager = (function() {
     showScreen: showScreen,
     updateHUD: updateHUD,
     showJudgment: showJudgment,
+    triggerBoostEffect: triggerBoostEffect,
     showLapNotification: showLapNotification,
     runCountdown: runCountdown,
     buildCarSelectCards: buildCarSelectCards,

@@ -134,6 +134,11 @@ var AudioManager = (function() {
   function playGo() {
     playTone([880], [0.3], 'sine');
   }
+
+  // Boost feedback (short ascending tone)
+  function playBoost() {
+    playTone([220, 440, 880], [0.08, 0.08, 0.12], 'sine');
+  }
   
   // Tire squeal (white noise + bandpass)
   function playTireSqueal(duration) {
@@ -182,6 +187,7 @@ var AudioManager = (function() {
     playFinish: playFinish,
     playCountdown: playCountdown,
     playGo: playGo,
+    playBoost: playBoost,
     playTireSqueal: playTireSqueal
   };
 })();

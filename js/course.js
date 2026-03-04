@@ -25,13 +25,17 @@ var CourseBuilder = (function() {
       var seg = segments[i];
       segmentStartDistances.push(totalDistance);
       
+      // Apply elevation scaling to reduce extreme height changes
+      var elevStart = seg.elevationStart * ELEVATION_SCALE;
+      var elevEnd = seg.elevationEnd * ELEVATION_SCALE;
+      
       if (seg.type === "straight") {
         var steps = Math.max(2, Math.floor(seg.length / 2));
         var stepLen = seg.length / steps;
         
         for (var s = 1; s <= steps; s++) {
           var t = s / steps;
-          var elev = seg.elevationStart + (seg.elevationEnd - seg.elevationStart) * t;
+          var elev = elevStart + (elevEnd - elevStart) * t;
           var newPos = pos.clone().add(dir.clone().multiplyScalar(stepLen));
           newPos.y = elev;
           points.push(newPos.clone());
@@ -46,7 +50,7 @@ var CourseBuilder = (function() {
         var sign = (seg.direction === "right") ? -1 : 1;
         
         // Number of arc steps
-        var arcSteps = Math.max(4, Math.floor(seg.angle / 5));
+        var arcSteps = Math.max(6, Math.floor(seg.angle / 3));
         var stepAngle = angleRad / arcSteps;
         
         // Calculate arc length
@@ -55,7 +59,7 @@ var CourseBuilder = (function() {
         
         for (var s = 1; s <= arcSteps; s++) {
           var t = s / arcSteps;
-          var elev = seg.elevationStart + (seg.elevationEnd - seg.elevationStart) * t;
+          var elev = elevStart + (elevEnd - elevStart) * t;
           
           // Rotate direction
           var rotAxis = up;
@@ -85,7 +89,7 @@ var CourseBuilder = (function() {
   
   // Create a CatmullRom spline from points
   function createSpline(points) {
-    return new THREE.CatmullRomCurve3(points, true, 'catmullrom', 0.3);
+    return new THREE.CatmullRomCurve3(points, true, 'catmullrom', 0.05);
   }
   
   // Build road mesh from spline
@@ -111,16 +115,16 @@ var CourseBuilder = (function() {
       var leftPt = point.clone().add(right.clone().multiplyScalar(-ROAD_HALF_WIDTH));
       var rightPt = point.clone().add(right.clone().multiplyScalar(ROAD_HALF_WIDTH));
       
-      // Offset road slightly up to avoid z-fighting with ground
-      leftPt.y += 0.02;
-      rightPt.y += 0.02;
+      // Offset road up to prevent z-fighting
+      leftPt.y += 0.05;
+      rightPt.y += 0.05;
       
       positions.push(leftPt.x, leftPt.y, leftPt.z);
       positions.push(rightPt.x, rightPt.y, rightPt.z);
       
-      // Road color: dark gray
-      colors.push(0.2, 0.2, 0.2);
-      colors.push(0.2, 0.2, 0.2);
+      // Road color: dark gray asphalt
+      colors.push(0.25, 0.25, 0.25);
+      colors.push(0.25, 0.25, 0.25);
       
       if (i < numSamples) {
         var idx = i * 2;
@@ -135,7 +139,7 @@ var CourseBuilder = (function() {
     roadGeom.computeVertexNormals();
     
     var roadMat = new THREE.MeshLambertMaterial({
-      color: 0x333333,
+      color: 0x444444,
       vertexColors: false,
       side: THREE.DoubleSide
     });
@@ -169,7 +173,7 @@ var CourseBuilder = (function() {
       // Left kerb
       var lInner = point.clone().add(right.clone().multiplyScalar(-(ROAD_HALF_WIDTH)));
       var lOuter = point.clone().add(right.clone().multiplyScalar(-(ROAD_HALF_WIDTH + kerbWidth)));
-      lInner.y += 0.03; lOuter.y += 0.03;
+      lInner.y += 0.06; lOuter.y += 0.06;
       
       leftPositions.push(lInner.x, lInner.y, lInner.z);
       leftPositions.push(lOuter.x, lOuter.y, lOuter.z);
@@ -178,7 +182,7 @@ var CourseBuilder = (function() {
       // Right kerb
       var rInner = point.clone().add(right.clone().multiplyScalar(ROAD_HALF_WIDTH));
       var rOuter = point.clone().add(right.clone().multiplyScalar(ROAD_HALF_WIDTH + kerbWidth));
-      rInner.y += 0.03; rOuter.y += 0.03;
+      rInner.y += 0.06; rOuter.y += 0.06;
       
       rightPositions.push(rInner.x, rInner.y, rInner.z);
       rightPositions.push(rOuter.x, rOuter.y, rOuter.z);
@@ -273,44 +277,45 @@ var CourseBuilder = (function() {
   // Build environment (ground, sky, Mt. Fuji, lighting)
   function buildEnvironment(scene, spline) {
     // Ground plane
-    var groundGeom = new THREE.PlaneGeometry(800, 800);
-    var groundMat = new THREE.MeshLambertMaterial({ color: 0x1A3320 });
+    var groundGeom = new THREE.PlaneGeometry(900, 900);
+    var groundMat = new THREE.MeshLambertMaterial({ color: 0x2D5A27 });
     var ground = new THREE.Mesh(groundGeom, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -1;
     scene.add(ground);
     
-    // Sky
-    scene.background = new THREE.Color(0x0A0A1A);
+    // Sky (bright daytime)
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 200, 650);
     
     // Mt. Fuji (simple cone NW of course)
-    var fujiGeom = new THREE.ConeGeometry(40, 30, 8);
+    var fujiGeom = new THREE.ConeGeometry(42, 32, 10);
     var fujiMat = new THREE.MeshLambertMaterial({
       color: 0xC8D2E6,
       transparent: true,
-      opacity: 0.15
+      opacity: 0.35
     });
     var fuji = new THREE.Mesh(fujiGeom, fujiMat);
-    fuji.position.set(-150, 10, -200);
+    fuji.position.set(-160, 10, -210);
     scene.add(fuji);
     
     // Snow cap
-    var snowGeom = new THREE.ConeGeometry(15, 8, 8);
+    var snowGeom = new THREE.ConeGeometry(16, 9, 10);
     var snowMat = new THREE.MeshLambertMaterial({
       color: 0xFFFFFF,
       transparent: true,
-      opacity: 0.2
+      opacity: 0.45
     });
     var snow = new THREE.Mesh(snowGeom, snowMat);
-    snow.position.set(-150, 22, -200);
+    snow.position.set(-160, 23, -210);
     scene.add(snow);
     
-    // Lighting
-    var dirLight = new THREE.DirectionalLight(0xFFFFCC, 0.8);
-    dirLight.position.set(50, 100, 50);
+    // Lighting (daylight)
+    var dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.0);
+    dirLight.position.set(50, 120, 30);
     scene.add(dirLight);
     
-    var ambLight = new THREE.AmbientLight(0x404060, 0.6);
+    var ambLight = new THREE.AmbientLight(0xFFFFFF, 0.55);
     scene.add(ambLight);
   }
   
@@ -318,17 +323,18 @@ var CourseBuilder = (function() {
   function build(scene) {
     var pathData = buildCoursePath(COURSE_SEGMENTS);
     var spline = createSpline(pathData.points);
+    var splineLength = spline.getLength();
     
     // Road
-    var road = buildRoadMesh(spline, pathData.totalDistance);
+    var road = buildRoadMesh(spline, splineLength);
     scene.add(road);
     
     // Kerbs
-    var kerbs = buildKerbs(spline, pathData.totalDistance);
+    var kerbs = buildKerbs(spline, splineLength);
     scene.add(kerbs);
     
     // Guardrails
-    var guardrails = buildGuardrails(spline, pathData.totalDistance);
+    var guardrails = buildGuardrails(spline, splineLength);
     scene.add(guardrails);
     
     // Start/Finish line
@@ -339,50 +345,75 @@ var CourseBuilder = (function() {
     buildEnvironment(scene, spline);
     
     // Build segment distance lookup
-    // Map accumulated path distance to segment index
-    var segLookup = buildSegmentLookup(pathData, spline);
+    // CRITICAL: use spline arc length as canonical distance to match getPointAt(t)
+    var segLookup = buildSegmentLookup(pathData, spline, splineLength);
     
     return {
       spline: spline,
-      totalDistance: pathData.totalDistance,
+      totalDistance: splineLength,
       pathData: pathData,
       segLookup: segLookup
     };
   }
   
-  // Build a lookup: for a given t (0-1 on spline), which segment are we in?
-  function buildSegmentLookup(pathData, spline) {
+  // Build a lookup: for a given distance along the course, which segment are we in?
+  // NOTE: CatmullRomCurve3.getPointAt(t) uses arc-length parameterization, so we must
+  // also treat spline arc length as the canonical distance.
+  function buildSegmentLookup(pathData, spline, splineLength) {
     var segments = COURSE_SEGMENTS;
-    var cumulDist = [];
+    var rawCumulDist = [];
     var d = 0;
     
+    // Raw cumulative distances based on segment definitions
     for (var i = 0; i < segments.length; i++) {
       var seg = segments[i];
-      cumulDist.push(d);
+      rawCumulDist.push(d);
       if (seg.type === "straight") {
         d += seg.length;
       } else {
-        var arcLength = seg.radius * (seg.angle * Math.PI / 180);
-        d += arcLength;
+        d += seg.radius * (seg.angle * Math.PI / 180);
       }
     }
-    cumulDist.push(d); // end
+    rawCumulDist.push(d);
+    var rawTotal = d;
+    
+    // Scale to match spline arc length
+    var scale = (rawTotal > 0) ? (splineLength / rawTotal) : 1;
+    var cumulDist = [];
+    for (var j = 0; j < rawCumulDist.length; j++) {
+      cumulDist.push(rawCumulDist[j] * scale);
+    }
     
     return {
       cumulDist: cumulDist,
-      totalDist: d,
+      totalDist: splineLength,
+      rawTotal: rawTotal,
+      scale: scale,
       getSegmentAt: function(distance) {
-        var dist = ((distance % d) + d) % d; // wrap around
+        var total = splineLength;
+        var dist = ((distance % total) + total) % total;
         for (var i = segments.length - 1; i >= 0; i--) {
           if (dist >= cumulDist[i]) {
+            var segLen = cumulDist[i + 1] - cumulDist[i];
             return {
               segment: segments[i],
               index: i,
-              progressInSeg: (dist - cumulDist[i]) / (cumulDist[i+1] - cumulDist[i])
+              progressInSeg: segLen > 0 ? (dist - cumulDist[i]) / segLen : 0,
+              distIntoSeg: dist - cumulDist[i],
+              segLength: segLen
             };
           }
         }
-        return { segment: segments[0], index: 0, progressInSeg: 0 };
+        return {
+          segment: segments[0],
+          index: 0,
+          progressInSeg: 0,
+          distIntoSeg: 0,
+          segLength: cumulDist[1] - cumulDist[0]
+        };
+      },
+      getSegmentAhead: function(distance, lookahead) {
+        return this.getSegmentAt(distance + lookahead);
       }
     };
   }

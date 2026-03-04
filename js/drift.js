@@ -15,6 +15,10 @@ var DriftSystem = (function() {
   var cornerName = "";
   var ringColorPhase = 0;
   
+  // Minimum on-screen time to avoid consecutive-corner flakiness
+  var ringElapsed = 0;
+  var pendingExit = false;
+  
   // Track which corners have been drifted this lap
   var driftedCorners = {};
   
@@ -34,6 +38,11 @@ var DriftSystem = (function() {
   function resetLap() {
     driftedCorners = {};
     state = "inactive";
+    currentCorner = null;
+    ringElapsed = 0;
+    pendingExit = false;
+    canvas.style.display = 'none';
+    clearCanvas();
   }
   
   function enterCorner(segment, carData) {
@@ -42,8 +51,16 @@ var DriftSystem = (function() {
     // Don't re-enter if already showing ring for this corner
     if (state === "ring" && currentCorner && currentCorner.id === segment.id) return;
     
+    // If we are switching to a new corner while a ring is active, count the previous
+    // one as a MISS immediately so the next ring can be shown reliably.
+    if (state === "ring" && currentCorner && currentCorner.id !== segment.id) {
+      judgeAndClear(DRIFT_JUDGE.MISS);
+    }
+    
     state = "ring";
     currentCorner = segment;
+    ringElapsed = 0;
+    pendingExit = false;
     cornerName = segment.name;
     ringRadius = RING_START_RADIUS;
     targetRadius = segment.driftTargetSize || 45;
@@ -61,10 +78,16 @@ var DriftSystem = (function() {
     }
   }
   
-  function exitCorner() {
+  function exitCorner(force) {
     if (state === "ring") {
+      // Ensure the ring stays on screen briefly so short / consecutive corners are playable
+      if (!force && ringElapsed < RING_MIN_DISPLAY_TIME) {
+        pendingExit = true;
+        return;
+      }
       // Auto-miss if didn't click
       doJudgment(999);
+      return;
     }
     state = "inactive";
     canvas.style.display = 'none';
@@ -75,6 +98,23 @@ var DriftSystem = (function() {
     if (state !== "ring") return;
     var diff = Math.abs(ringRadius - targetRadius);
     doJudgment(diff);
+  }
+  
+  function judgeAndClear(judge) {
+    if (currentCorner) {
+      driftedCorners[currentCorner.id] = true;
+    }
+    
+    if (judgmentCallback) {
+      judgmentCallback(judge, currentCorner);
+    }
+    
+    state = "inactive";
+    canvas.style.display = 'none';
+    clearCanvas();
+    currentCorner = null;
+    ringElapsed = 0;
+    pendingExit = false;
   }
   
   function doJudgment(diff) {
@@ -110,11 +150,19 @@ var DriftSystem = (function() {
   function update(dt) {
     if (state !== "ring") return;
     
+    ringElapsed += dt;
     ringRadius -= shrinkSpeed * dt;
+    
+    // If we left the corner segment too quickly, allow a delayed auto-miss after minimum display time
+    if (pendingExit && ringElapsed >= RING_MIN_DISPLAY_TIME) {
+      pendingExit = false;
+      doJudgment(999);
+      return;
+    }
     ringColorPhase = 1.0 - Math.max(0, (ringRadius - targetRadius) / (RING_START_RADIUS - targetRadius));
     
     // Auto miss if ring shrinks past target
-    if (ringRadius <= targetRadius * 0.4) {
+    if (ringRadius <= targetRadius * 0.6) {
       doJudgment(999);
       return;
     }
@@ -159,11 +207,7 @@ var DriftSystem = (function() {
     ctx.lineWidth = 12;
     ctx.stroke();
     
-    // Corner name above
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.textAlign = 'center';
-    ctx.fillText(cornerName, cx, cy - ringRadius - 20);
+    // Corner name is shown in the HUD overlay (C-3: removed duplicate here)
     
     // "CLICK!" below
     ctx.font = 'bold 22px sans-serif';

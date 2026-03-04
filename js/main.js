@@ -214,8 +214,9 @@
     var seg = segInfo.segment;
     
     // Elevation effect
+    // Keep consistent with course.js where elevation is scaled for visuals
     if (seg.elevationStart !== undefined && seg.elevationEnd !== undefined) {
-      var elevDiff = seg.elevationEnd - seg.elevationStart;
+      var elevDiff = (seg.elevationEnd - seg.elevationStart) * ELEVATION_SCALE;
       var segLength = seg.type === "straight" ? seg.length : (seg.radius * seg.angle * Math.PI / 180);
       if (segLength > 0) {
         var grade = elevDiff / segLength;
@@ -261,8 +262,18 @@
     }
     
     // ===== Corner / Straight detection =====
-    segInfo = courseData.segLookup.getSegmentAt(distance);
-    seg = segInfo.segment;
+    // Use lookahead so the drift ring appears slightly before the corner (timing fix)
+    var segNowInfo = courseData.segLookup.getSegmentAt(distance);
+    var segNow = segNowInfo.segment;
+    var segTriggerInfo = (courseData.segLookup.getSegmentAhead)
+      ? courseData.segLookup.getSegmentAhead(distance, CORNER_LOOKAHEAD)
+      : segNowInfo;
+    var segTrigger = (segTriggerInfo.segment && segTriggerInfo.segment.type === "corner")
+      ? segTriggerInfo.segment
+      : segNow;
+    
+    segInfo = segNowInfo;
+    seg = segTrigger;
     
     if (seg.id !== prevSegmentId) {
       // Segment changed
@@ -293,11 +304,14 @@
     
     // Lateral movement (only in straight mode or when drift not active)
     if (!DriftSystem.isActive()) {
-      targetOffset = (mouseX - 0.5) * 2.0 * ROAD_HALF_WIDTH;
-      lateralOffset += (targetOffset - lateralOffset) * 0.08;
+      // More responsive steering
+      targetOffset = (mouseX - 0.5) * 2.4 * ROAD_HALF_WIDTH;
+      var maxOff = ROAD_HALF_WIDTH * 0.95;
+      targetOffset = Math.max(-maxOff, Math.min(maxOff, targetOffset));
+      lateralOffset += (targetOffset - lateralOffset) * 0.12;
     } else {
-      // During drift, auto-center
-      lateralOffset += (0 - lateralOffset) * 0.05;
+      // During drift, auto-center a bit faster
+      lateralOffset += (0 - lateralOffset) * 0.08;
     }
     
     // Update drift system
@@ -327,7 +341,8 @@
       speed: speed,
       progress: progress,
       score: totalScore,
-      boosting: boostTimer > 0
+      boosting: boostTimer > 0,
+      boostMul: boostMul
     });
   }
   
@@ -347,7 +362,8 @@
     // Position: path point + lateral offset
     carModel.position.copy(point);
     carModel.position.add(right.clone().multiplyScalar(lateralOffset));
-    carModel.position.y = point.y + 0.02;
+    // Keep the car above the road mesh (road surface is slightly offset up)
+    carModel.position.y = point.y + 0.07;
     
     // Rotation: face tangent direction
     var lookTarget = point.clone().add(tangent);
@@ -390,7 +406,7 @@
     if (instant) {
       camera.position.copy(targetPos);
     } else {
-      camera.position.lerp(targetPos, 0.08);
+      camera.position.lerp(targetPos, 0.14);
     }
     camera.lookAt(lookPos);
   }
@@ -405,6 +421,14 @@
     boostMul = judge.boostMul * (carData.driftBoostMul || 1.0);
     boostDuration = judge.boostDur;
     boostTimer = boostDuration;
+
+    // Boost / penalty feedback
+    if (UIManager.triggerBoostEffect) {
+      UIManager.triggerBoostEffect(boostMul, boostDuration);
+    }
+    if (AudioManager.playBoost && boostMul > 0) {
+      AudioManager.playBoost();
+    }
     
     // Count
     if (judge.label === "PERFECT") {
