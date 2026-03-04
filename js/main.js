@@ -367,8 +367,8 @@
     var right = new THREE.Vector3().crossVectors(tangent, up).normalize();
     
     // Camera behind and above car
-    var camOffset = tangent.clone().multiplyScalar(-3.5);
-    camOffset.y = 2.0;
+    var camOffset = tangent.clone().multiplyScalar(-2.8);
+    camOffset.y = 1.5;
     
     // Slight lateral shift in corners
     if (inCorner) {
@@ -376,8 +376,8 @@
     }
     
     var targetPos = carModel.position.clone().add(camOffset);
-    var lookPos = carModel.position.clone().add(tangent.clone().multiplyScalar(3));
-    lookPos.y = carModel.position.y + 0.5;
+    var lookPos = carModel.position.clone().add(tangent.clone().multiplyScalar(2.5));
+    lookPos.y = carModel.position.y + 0.3;
     
     // Camera shake
     if (shakeTimer > 0) {
@@ -390,7 +390,7 @@
     if (instant) {
       camera.position.copy(targetPos);
     } else {
-      camera.position.lerp(targetPos, 0.06);
+      camera.position.lerp(targetPos, 0.08);
     }
     camera.lookAt(lookPos);
   }

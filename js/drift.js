@@ -39,6 +39,8 @@ var DriftSystem = (function() {
   function enterCorner(segment, carData) {
     if (!segment || segment.type !== "corner") return;
     if (driftedCorners[segment.id]) return;
+    // Don't re-enter if already showing ring for this corner
+    if (state === "ring" && currentCorner && currentCorner.id === segment.id) return;
     
     state = "ring";
     currentCorner = segment;
@@ -112,7 +114,7 @@ var DriftSystem = (function() {
     ringColorPhase = 1.0 - Math.max(0, (ringRadius - targetRadius) / (RING_START_RADIUS - targetRadius));
     
     // Auto miss if ring shrinks past target
-    if (ringRadius <= targetRadius * 0.3) {
+    if (ringRadius <= targetRadius * 0.4) {
       doJudgment(999);
       return;
     }
