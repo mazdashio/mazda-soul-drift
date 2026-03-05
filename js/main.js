@@ -363,7 +363,7 @@
     carModel.position.copy(point);
     carModel.position.add(right.clone().multiplyScalar(lateralOffset));
     // Keep the car above the road mesh (road surface is slightly offset up)
-    carModel.position.y = point.y + 0.07;
+    carModel.position.y = point.y + 0.15;
     
     // Rotation: face tangent direction
     var lookTarget = point.clone().add(tangent);
@@ -382,9 +382,9 @@
     var up = new THREE.Vector3(0, 1, 0);
     var right = new THREE.Vector3().crossVectors(tangent, up).normalize();
     
-    // Camera behind and above car
-    var camOffset = tangent.clone().multiplyScalar(-2.8);
-    camOffset.y = 1.5;
+    // Camera behind and above car — closer for better road visibility
+    var camOffset = tangent.clone().multiplyScalar(-2.2);
+    camOffset.y = 1.2;
     
     // Slight lateral shift in corners
     if (inCorner) {

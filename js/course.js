@@ -116,8 +116,8 @@ var CourseBuilder = (function() {
       var rightPt = point.clone().add(right.clone().multiplyScalar(ROAD_HALF_WIDTH));
       
       // Offset road up to prevent z-fighting
-      leftPt.y += 0.05;
-      rightPt.y += 0.05;
+      leftPt.y += 0.08;
+      rightPt.y += 0.08;
       
       positions.push(leftPt.x, leftPt.y, leftPt.z);
       positions.push(rightPt.x, rightPt.y, rightPt.z);
@@ -139,7 +139,7 @@ var CourseBuilder = (function() {
     roadGeom.computeVertexNormals();
     
     var roadMat = new THREE.MeshLambertMaterial({
-      color: 0x444444,
+      color: 0x555555,
       vertexColors: false,
       side: THREE.DoubleSide
     });
@@ -173,7 +173,7 @@ var CourseBuilder = (function() {
       // Left kerb
       var lInner = point.clone().add(right.clone().multiplyScalar(-(ROAD_HALF_WIDTH)));
       var lOuter = point.clone().add(right.clone().multiplyScalar(-(ROAD_HALF_WIDTH + kerbWidth)));
-      lInner.y += 0.06; lOuter.y += 0.06;
+      lInner.y += 0.09; lOuter.y += 0.09;
       
       leftPositions.push(lInner.x, lInner.y, lInner.z);
       leftPositions.push(lOuter.x, lOuter.y, lOuter.z);
@@ -182,7 +182,7 @@ var CourseBuilder = (function() {
       // Right kerb
       var rInner = point.clone().add(right.clone().multiplyScalar(ROAD_HALF_WIDTH));
       var rOuter = point.clone().add(right.clone().multiplyScalar(ROAD_HALF_WIDTH + kerbWidth));
-      rInner.y += 0.06; rOuter.y += 0.06;
+      rInner.y += 0.09; rOuter.y += 0.09;
       
       rightPositions.push(rInner.x, rInner.y, rInner.z);
       rightPositions.push(rOuter.x, rOuter.y, rOuter.z);
@@ -217,10 +217,10 @@ var CourseBuilder = (function() {
     var group = new THREE.Group();
     var numPosts = Math.floor(totalDistance / 4);
     var up = new THREE.Vector3(0, 1, 0);
-    var railOffset = ROAD_HALF_WIDTH + 0.3;
+    var railOffset = ROAD_HALF_WIDTH + 0.4;
     
-    var postGeom = new THREE.BoxGeometry(0.05, 0.3, 0.05);
-    var postMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    var postGeom = new THREE.BoxGeometry(0.08, 0.5, 0.08);
+    var postMat = new THREE.MeshLambertMaterial({ color: 0xCCCCCC });
     
     // Use instanced mesh for performance
     var totalPosts = numPosts * 2;
@@ -236,13 +236,13 @@ var CourseBuilder = (function() {
       
       // Left guardrail
       dummy.position.copy(point.clone().add(right.clone().multiplyScalar(-railOffset)));
-      dummy.position.y += 0.15;
+      dummy.position.y += 0.25;
       dummy.updateMatrix();
       instanced.setMatrixAt(idx++, dummy.matrix);
       
       // Right guardrail
       dummy.position.copy(point.clone().add(right.clone().multiplyScalar(railOffset)));
-      dummy.position.y += 0.15;
+      dummy.position.y += 0.25;
       dummy.updateMatrix();
       instanced.setMatrixAt(idx++, dummy.matrix);
     }
@@ -281,12 +281,12 @@ var CourseBuilder = (function() {
     var groundMat = new THREE.MeshLambertMaterial({ color: 0x2D5A27 });
     var ground = new THREE.Mesh(groundGeom, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1;
+    ground.position.y = -2.0;
     scene.add(ground);
     
     // Sky (bright daytime)
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 200, 650);
+    scene.fog = new THREE.Fog(0x87CEEB, 300, 900);
     
     // Mt. Fuji (simple cone NW of course)
     var fujiGeom = new THREE.ConeGeometry(42, 32, 10);

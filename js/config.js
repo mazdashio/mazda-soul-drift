@@ -5,8 +5,8 @@
 
 // ===== Game Constants =====
 var TOTAL_LAPS = 3;
-var ROAD_WIDTH = 2.0;       // Game units (real 20m / 10)
-var ROAD_HALF_WIDTH = 1.0;
+var ROAD_WIDTH = 3.0;       // Game units – wider for better visibility
+var ROAD_HALF_WIDTH = 1.5;
 
 // ===== Elevation scale factor =====
 // Real Fuji ~35m elevation change. At 1/10 scale = 3.5 units.
@@ -156,6 +156,10 @@ var COURSE_SEGMENTS = [
     direction: "right", angle: 90, radius: 6.0,
     elevationStart: 4.0, elevationEnd: 3.0,
     difficulty: 5, driftRingSpeed: 1.3, driftTargetSize: 35
+  },
+  {
+    id: "S12", type: "straight", name: "最終ストレート",
+    length: 30, elevationStart: 3.0, elevationEnd: 0
   }
 ];
 
