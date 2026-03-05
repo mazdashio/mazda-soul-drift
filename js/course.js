@@ -12,7 +12,7 @@ var CourseBuilder = (function() {
     var segmentMeta = []; // maps point index to segment info
     
     var pos = new THREE.Vector3(0, 0, 0);
-    var dir = new THREE.Vector3(0, 0, -1); // initial direction: negative Z
+    var dir = new THREE.Vector3(1, 0, 0); // initial direction: positive X (main straight)
     var up = new THREE.Vector3(0, 1, 0);
     
     var totalDistance = 0;
@@ -274,52 +274,329 @@ var CourseBuilder = (function() {
     return line;
   }
   
-  // Build environment (ground, sky, Mt. Fuji, lighting)
-  function buildEnvironment(scene, spline) {
-    // Ground plane
-    var groundGeom = new THREE.PlaneGeometry(900, 900);
-    var groundMat = new THREE.MeshLambertMaterial({ color: 0x2D5A27 });
+  // ===== ENVIRONMENT: Ground, Sky, Lighting =====
+  function buildEnvironment(scene) {
+    // Ground plane (green grass)
+    var groundGeom = new THREE.PlaneGeometry(1200, 1200);
+    var groundMat = new THREE.MeshLambertMaterial({ color: 0x2D6B27 });
     var ground = new THREE.Mesh(groundGeom, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -2.0;
     scene.add(ground);
     
-    // Sky (bright daytime)
-    scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 300, 900);
+    // Inner tarmac/grass area
+    var innerGeom = new THREE.PlaneGeometry(200, 200);
+    var innerMat = new THREE.MeshLambertMaterial({ color: 0x337733 });
+    var inner = new THREE.Mesh(innerGeom, innerMat);
+    inner.rotation.x = -Math.PI / 2;
+    inner.position.set(30, -1.95, 15);
+    scene.add(inner);
     
-    // Mt. Fuji (simple cone NW of course)
-    var fujiGeom = new THREE.ConeGeometry(42, 32, 10);
-    var fujiMat = new THREE.MeshLambertMaterial({
-      color: 0xC8D2E6,
-      transparent: true,
-      opacity: 0.35
-    });
-    var fuji = new THREE.Mesh(fujiGeom, fujiMat);
-    fuji.position.set(-160, 10, -210);
-    scene.add(fuji);
+    // Sky (bright blue daytime)
+    scene.background = new THREE.Color(0x7EC8E3);
+    scene.fog = new THREE.Fog(0x7EC8E3, 400, 1200);
     
-    // Snow cap
-    var snowGeom = new THREE.ConeGeometry(16, 9, 10);
-    var snowMat = new THREE.MeshLambertMaterial({
-      color: 0xFFFFFF,
-      transparent: true,
-      opacity: 0.45
-    });
-    var snow = new THREE.Mesh(snowGeom, snowMat);
-    snow.position.set(-160, 23, -210);
-    scene.add(snow);
-    
-    // Lighting (daylight)
-    var dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-    dirLight.position.set(50, 120, 30);
+    // Warm sun light
+    var dirLight = new THREE.DirectionalLight(0xFFF5E0, 1.2);
+    dirLight.position.set(80, 150, -50);
     scene.add(dirLight);
     
-    var ambLight = new THREE.AmbientLight(0xFFFFFF, 0.55);
+    // Blue sky bounce fill light
+    var dirLight2 = new THREE.DirectionalLight(0xCCDDFF, 0.4);
+    dirLight2.position.set(-40, 80, 60);
+    scene.add(dirLight2);
+    
+    var ambLight = new THREE.AmbientLight(0xFFFFFF, 0.5);
     scene.add(ambLight);
   }
   
-  // Build the entire course and return useful data
+  // ===== MT. FUJI (large, snow-capped, prominent) =====
+  function buildMtFuji(scene) {
+    var fujiGroup = new THREE.Group();
+    
+    // Mountain base (wider, darker)
+    var baseGeom = new THREE.ConeGeometry(120, 20, 16);
+    var baseMat = new THREE.MeshLambertMaterial({ color: 0x4A5A3A, transparent: true, opacity: 0.5 });
+    var base = new THREE.Mesh(baseGeom, baseMat);
+    base.position.set(20, 5, -320);
+    fujiGroup.add(base);
+    
+    // Main mountain body (bluish-gray)
+    var fujiGeom = new THREE.ConeGeometry(80, 55, 16);
+    var fujiMat = new THREE.MeshLambertMaterial({ color: 0x6B7B9B, transparent: true, opacity: 0.75 });
+    var fuji = new THREE.Mesh(fujiGeom, fujiMat);
+    fuji.position.set(20, 20, -320);
+    fujiGroup.add(fuji);
+    
+    // Snow cap (white, prominent)
+    var snowGeom = new THREE.ConeGeometry(30, 18, 16);
+    var snowMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.9 });
+    var snow = new THREE.Mesh(snowGeom, snowMat);
+    snow.position.set(20, 42, -320);
+    fujiGroup.add(snow);
+    
+    scene.add(fujiGroup);
+  }
+  
+  // ===== GRANDSTANDS with SPECTATORS =====
+  function buildGrandstands(scene) {
+    var group = new THREE.Group();
+    var standColor = 0x556677;
+    var seatColors = [0xDD2222, 0x2255CC, 0xFFCC00, 0x22AA44, 0xFFFFFF, 0xFF6600];
+    
+    // Main Grandstand (3 tiers, outside of main straight)
+    for (var tier = 0; tier < 3; tier++) {
+      var width = 55 - tier * 3;
+      var height = 2.5;
+      var depth = 3;
+      var geom = new THREE.BoxGeometry(width, height, depth);
+      var mat = new THREE.MeshLambertMaterial({ color: standColor });
+      var mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(35, tier * height + height / 2 - 1.5, -(ROAD_HALF_WIDTH + 2.5 + tier * (depth + 0.2)));
+      group.add(mesh);
+    }
+    
+    // Grandstand roof
+    var roofGeom = new THREE.BoxGeometry(58, 0.3, 12);
+    var roofMat = new THREE.MeshLambertMaterial({ color: 0x334455 });
+    var roof = new THREE.Mesh(roofGeom, roofMat);
+    roof.position.set(35, 7, -(ROAD_HALF_WIDTH + 6));
+    group.add(roof);
+    
+    // Roof support pillars
+    var pillarGeom = new THREE.CylinderGeometry(0.15, 0.15, 8, 6);
+    var pillarMat = new THREE.MeshLambertMaterial({ color: 0x666677 });
+    for (var p = 0; p < 8; p++) {
+      var pillar = new THREE.Mesh(pillarGeom, pillarMat);
+      pillar.position.set(8 + p * 7, 3, -(ROAD_HALF_WIDTH + 2));
+      group.add(pillar);
+    }
+    
+    // Spectators on main grandstand (colored cubes via InstancedMesh)
+    var specGeom = new THREE.BoxGeometry(0.35, 0.5, 0.25);
+    var totalSpecs = 400;
+    var specsPerColor = Math.floor(totalSpecs / seatColors.length);
+    
+    for (var c = 0; c < seatColors.length; c++) {
+      var sMat = new THREE.MeshLambertMaterial({ color: seatColors[c] });
+      var inst = new THREE.InstancedMesh(specGeom, sMat, specsPerColor);
+      var dummy = new THREE.Object3D();
+      for (var si = 0; si < specsPerColor; si++) {
+        var sTier = Math.floor(Math.random() * 3);
+        var h = 2.5;
+        dummy.position.set(
+          7 + Math.random() * 52,
+          sTier * h + h - 1.2,
+          -(ROAD_HALF_WIDTH + 1.5 + sTier * 3.2 + Math.random() * 2)
+        );
+        dummy.updateMatrix();
+        inst.setMatrixAt(si, dummy.matrix);
+      }
+      inst.instanceMatrix.needsUpdate = true;
+      group.add(inst);
+    }
+    
+    // Secondary Grandstand (inner/left side of main straight)
+    var innerStandGeom = new THREE.BoxGeometry(35, 3, 3);
+    var innerStandMat = new THREE.MeshLambertMaterial({ color: 0x556677 });
+    var innerStand = new THREE.Mesh(innerStandGeom, innerStandMat);
+    innerStand.position.set(30, 0, ROAD_HALF_WIDTH + 3);
+    group.add(innerStand);
+    
+    // Inner grandstand spectators
+    for (var ci = 0; ci < 3; ci++) {
+      var sMat2 = new THREE.MeshLambertMaterial({ color: seatColors[ci] });
+      var inst2 = new THREE.InstancedMesh(specGeom, sMat2, 40);
+      var dummy2 = new THREE.Object3D();
+      for (var si2 = 0; si2 < 40; si2++) {
+        dummy2.position.set(
+          12 + Math.random() * 30,
+          1.7 + Math.random() * 0.3,
+          ROAD_HALF_WIDTH + 1.5 + Math.random() * 2
+        );
+        dummy2.updateMatrix();
+        inst2.setMatrixAt(si2, dummy2.matrix);
+      }
+      inst2.instanceMatrix.needsUpdate = true;
+      group.add(inst2);
+    }
+    
+    scene.add(group);
+  }
+  
+  // ===== PIT BUILDINGS & CONTROL TOWER =====
+  function buildPitBuildings(scene) {
+    var group = new THREE.Group();
+    
+    // Main pit building
+    var pitGeom = new THREE.BoxGeometry(50, 3.5, 6);
+    var pitMat = new THREE.MeshLambertMaterial({ color: 0x445566 });
+    var pit = new THREE.Mesh(pitGeom, pitMat);
+    pit.position.set(30, 0.5, ROAD_HALF_WIDTH + 8);
+    group.add(pit);
+    
+    // Pit roof
+    var pitRoofGeom = new THREE.BoxGeometry(52, 0.2, 9);
+    var pitRoofMat = new THREE.MeshLambertMaterial({ color: 0x333344 });
+    var pitRoof = new THREE.Mesh(pitRoofGeom, pitRoofMat);
+    pitRoof.position.set(30, 3, ROAD_HALF_WIDTH + 7);
+    group.add(pitRoof);
+    
+    // Pit lane wall separator
+    var wallGeom = new THREE.BoxGeometry(45, 0.4, 0.15);
+    var wallMat = new THREE.MeshLambertMaterial({ color: 0xCCCCCC });
+    var wall = new THREE.Mesh(wallGeom, wallMat);
+    wall.position.set(30, -0.3, ROAD_HALF_WIDTH + 1.2);
+    group.add(wall);
+    
+    // Control tower
+    var towerGeom = new THREE.BoxGeometry(6, 8, 5);
+    var towerMat = new THREE.MeshLambertMaterial({ color: 0x556677 });
+    var tower = new THREE.Mesh(towerGeom, towerMat);
+    tower.position.set(3, 2.5, ROAD_HALF_WIDTH + 6);
+    group.add(tower);
+    
+    // Tower windows (glass front)
+    var winGeom = new THREE.BoxGeometry(5.5, 2.5, 0.1);
+    var winMat = new THREE.MeshLambertMaterial({ color: 0x88BBDD, transparent: true, opacity: 0.6 });
+    var win = new THREE.Mesh(winGeom, winMat);
+    win.position.set(3, 5, ROAD_HALF_WIDTH + 3.5);
+    group.add(win);
+    
+    scene.add(group);
+  }
+  
+  // ===== FOREST TREES =====
+  function buildForestTrees(scene, spline) {
+    var treeGeom = new THREE.ConeGeometry(1.2, 4, 5);
+    var trunkGeom = new THREE.CylinderGeometry(0.15, 0.25, 1.5, 5);
+    var treeMats = [
+      new THREE.MeshLambertMaterial({ color: 0x1A6B2A }),
+      new THREE.MeshLambertMaterial({ color: 0x145020 })
+    ];
+    var trunkMat = new THREE.MeshLambertMaterial({ color: 0x4A3520 });
+    var up = new THREE.Vector3(0, 1, 0);
+    
+    var treePositions = [];
+    
+    // Trees scattered near the track
+    for (var ti = 0; ti < 160; ti++) {
+      var tt = Math.random();
+      var tPoint = spline.getPointAt(tt);
+      var tTangent = spline.getTangentAt(tt);
+      var tRight = new THREE.Vector3().crossVectors(tTangent, up).normalize();
+      var tSide = (Math.random() > 0.5) ? 1 : -1;
+      var tDist = ROAD_HALF_WIDTH + 6 + Math.random() * 30;
+      var treePos = tPoint.clone().add(tRight.clone().multiplyScalar(tSide * tDist));
+      treePos.y = -2.0;
+      // Skip trees in grandstand/pit area
+      if (treePos.x > -5 && treePos.x < 75 && Math.abs(treePos.z) < 20) continue;
+      treePositions.push(treePos);
+    }
+    
+    // Extra trees for forest backdrop (further away)
+    for (var bi = 0; bi < 100; bi++) {
+      var bAngle = Math.random() * Math.PI * 2;
+      var bDist = 60 + Math.random() * 140;
+      var bPos = new THREE.Vector3(30 + Math.cos(bAngle) * bDist, -2.0, 20 + Math.sin(bAngle) * bDist);
+      if (bPos.x > -5 && bPos.x < 75 && Math.abs(bPos.z) < 20) continue;
+      treePositions.push(bPos);
+    }
+    
+    var numTrees = treePositions.length;
+    if (numTrees === 0) return;
+    
+    // Create instanced meshes for each tree color variant
+    for (var mi = 0; mi < treeMats.length; mi++) {
+      var count = Math.floor(numTrees / treeMats.length);
+      var startIdx = mi * count;
+      var treeInst = new THREE.InstancedMesh(treeGeom, treeMats[mi], count);
+      var trunkInst = new THREE.InstancedMesh(trunkGeom, trunkMat, count);
+      var dummyT = new THREE.Object3D();
+      
+      for (var fi = 0; fi < count; fi++) {
+        var fIdx = startIdx + fi;
+        if (fIdx >= numTrees) break;
+        var fPos = treePositions[fIdx];
+        var fScale = 0.6 + Math.random() * 0.8;
+        
+        // Tree top (cone)
+        dummyT.position.set(fPos.x, fPos.y + 2.5 * fScale, fPos.z);
+        dummyT.scale.set(fScale, fScale, fScale);
+        dummyT.updateMatrix();
+        treeInst.setMatrixAt(fi, dummyT.matrix);
+        
+        // Trunk (cylinder)
+        dummyT.position.set(fPos.x, fPos.y + 0.75 * fScale, fPos.z);
+        dummyT.updateMatrix();
+        trunkInst.setMatrixAt(fi, dummyT.matrix);
+      }
+      
+      treeInst.instanceMatrix.needsUpdate = true;
+      trunkInst.instanceMatrix.needsUpdate = true;
+      scene.add(treeInst);
+      scene.add(trunkInst);
+    }
+  }
+  
+  // ===== TRACK-SIDE BANNERS =====
+  function buildTrackBanners(scene, spline) {
+    var up = new THREE.Vector3(0, 1, 0);
+    var bannerColors = [0xCC0000, 0x0044CC, 0xFFCC00, 0x22AA44, 0xCC0066];
+    var bannerTs = [0.22, 0.35, 0.5, 0.68, 0.85];
+    
+    for (var bb = 0; bb < bannerTs.length; bb++) {
+      var bt = bannerTs[bb];
+      var bPoint = spline.getPointAt(bt);
+      var bTangent = spline.getTangentAt(bt);
+      var bRight = new THREE.Vector3().crossVectors(bTangent, up).normalize();
+      
+      var bannerGeom = new THREE.BoxGeometry(4, 1.2, 0.1);
+      var bannerMat = new THREE.MeshLambertMaterial({ color: bannerColors[bb] });
+      var banner = new THREE.Mesh(bannerGeom, bannerMat);
+      var bannerPos = bPoint.clone().add(bRight.clone().multiplyScalar(ROAD_HALF_WIDTH + 1));
+      banner.position.copy(bannerPos);
+      banner.position.y += 0.6;
+      banner.rotation.y = Math.atan2(bTangent.x, bTangent.z);
+      scene.add(banner);
+    }
+  }
+  
+  // ===== TIRE BARRIERS at key corners =====
+  function buildTireBarriers(scene, spline) {
+    var up = new THREE.Vector3(0, 1, 0);
+    var barrierGeom = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 8);
+    var blackMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    var redMat = new THREE.MeshLambertMaterial({ color: 0xCC2222 });
+    
+    // TGR corner area and ADVAN hairpin area
+    var cornerRanges = [
+      { start: 0.21, end: 0.27, count: 18 },
+      { start: 0.52, end: 0.62, count: 22 }
+    ];
+    
+    for (var cr = 0; cr < cornerRanges.length; cr++) {
+      var range = cornerRanges[cr];
+      for (var ti = 0; ti < range.count; ti++) {
+        var tt = range.start + (range.end - range.start) * (ti / range.count);
+        var tPoint = spline.getPointAt(tt);
+        var tTangent = spline.getTangentAt(tt);
+        var tRight = new THREE.Vector3().crossVectors(tTangent, up).normalize();
+        var tOffset = ROAD_HALF_WIDTH + 0.6;
+        for (var row = 0; row < 2; row++) {
+          var tirePos = tPoint.clone().add(tRight.clone().multiplyScalar(tOffset + row * 0.5));
+          var tireMat = (row === 0 && ti % 3 === 0) ? redMat : blackMat;
+          var tire = new THREE.Mesh(barrierGeom, tireMat);
+          tire.position.copy(tirePos);
+          tire.position.y += 0.25 + row * 0.5;
+          tire.rotation.x = Math.PI / 2;
+          scene.add(tire);
+        }
+      }
+    }
+  }
+  
+  // ===== MAIN BUILD FUNCTION =====
   function build(scene) {
     var pathData = buildCoursePath(COURSE_SEGMENTS);
     var spline = createSpline(pathData.points);
@@ -341,15 +618,32 @@ var CourseBuilder = (function() {
     var sfLine = buildStartFinishLine(spline);
     scene.add(sfLine);
     
-    // Environment
-    buildEnvironment(scene, spline);
-    
-    // Center lane dashes for speed perception
+    // Center lane dashes
     var centerDashes = buildCenterDashes(spline, splineLength);
     scene.add(centerDashes);
     
+    // Environment (ground, sky, lighting)
+    buildEnvironment(scene);
+    
+    // Mt. Fuji (large, snow-capped)
+    buildMtFuji(scene);
+    
+    // Grandstands with spectators
+    buildGrandstands(scene);
+    
+    // Pit buildings & control tower
+    buildPitBuildings(scene);
+    
+    // Forest trees
+    buildForestTrees(scene, spline);
+    
+    // Track-side banners
+    buildTrackBanners(scene, spline);
+    
+    // Tire barriers at key corners
+    buildTireBarriers(scene, spline);
+    
     // Build segment distance lookup
-    // CRITICAL: use spline arc length as canonical distance to match getPointAt(t)
     var segLookup = buildSegmentLookup(pathData, spline, splineLength);
     
     // Generate minimap 2D points

@@ -272,7 +272,7 @@
     var segTriggerInfo = (courseData.segLookup.getSegmentAhead)
       ? courseData.segLookup.getSegmentAhead(distance, CORNER_LOOKAHEAD)
       : segNowInfo;
-    var segTrigger = (segTriggerInfo.segment && segTriggerInfo.segment.type === "corner")
+    var segTrigger = (segTriggerInfo.segment && segTriggerInfo.segment.type === "corner" && !segTriggerInfo.segment.noDrift)
       ? segTriggerInfo.segment
       : segNow;
     
@@ -281,8 +281,10 @@
     
     if (seg.id !== prevSegmentId) {
       // Segment changed
-      if (seg.type === "corner") {
-        // For consecutive corners: if previous drift is done, enter new corner
+      var isDriftCorner = (seg.type === "corner" && !seg.noDrift);
+      
+      if (isDriftCorner) {
+        // Drift corner: trigger ring
         if (DriftSystem.getState() === "inactive" || DriftSystem.getState() === "judged") {
           inCorner = true;
           // Small delay for consecutive corners so player can see the next ring
@@ -296,6 +298,12 @@
           DriftSystem.exitCorner();
           inCorner = true;
           DriftSystem.enterCorner(seg, carData);
+        }
+      } else if (seg.type === "corner" && seg.noDrift) {
+        // Shape-only corner: no drift ring, but still mark as in-corner for camera
+        inCorner = true;
+        if (DriftSystem.isActive()) {
+          DriftSystem.exitCorner();
         }
       } else if (seg.type === "straight") {
         inCorner = false;

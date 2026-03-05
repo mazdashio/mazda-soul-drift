@@ -17,62 +17,127 @@ var ELEVATION_SCALE = 0.45;
 // Scale: 1/10 of real distance
 // Elevations are raw values; scaled by ELEVATION_SCALE at build time
 var COURSE_SEGMENTS = [
-  // ===== 5コーナー構成: 緩やかなカーブ =====
-  // 全て右カーブ、各60-80°で合計360°。自然なオーバル型コース。
-  // 目標: ~30秒/周
+  // ===== 富士スピードウェイ 実コースレイアウト =====
+  // 実際のコース形状を忠実に再現。5つのドリフトポイント + 3つの形状コーナー。
+  // 右回り（時計回り）。~30秒/周目標。
+  // Net turning: R(105+25+70+140+35+80) - L(60+35) = 455-95 = 360° ✓
+
+  // メインストレート（富士の象徴、1,475m → 簡略70単位）
   {
     id: "S01", type: "straight", name: "メインストレート",
-    length: 42, elevationStart: 0, elevationEnd: 0
+    length: 70, elevationStart: 0, elevationEnd: 0
   },
+
+  // T01: TGRコーナー（旧1コーナー）- 急角度の右、フルブレーキングポイント
   {
     id: "T01", type: "corner", name: "TGRコーナー",
-    direction: "right", angle: 80, radius: 8.0,
-    elevationStart: 0, elevationEnd: -0.2,
+    direction: "right", angle: 105, radius: 4.0,
+    elevationStart: 0, elevationEnd: -1.0,
+    difficulty: 5, driftRingSpeed: 1.3, driftTargetSize: 38
+  },
+
+  // S02: T01→T02 接続直線
+  {
+    id: "S02", type: "straight", name: "T1-T2接続",
+    length: 12, elevationStart: -1.0, elevationEnd: -1.0
+  },
+
+  // T02: 第2コーナー（緩い右、形状再現用・ドリフトなし）
+  {
+    id: "T02", type: "corner", name: "第2コーナー",
+    direction: "right", angle: 25, radius: 8.0,
+    elevationStart: -1.0, elevationEnd: -1.2,
+    noDrift: true
+  },
+
+  // S03: 第1セクター直線
+  {
+    id: "S03", type: "straight", name: "第1セクター",
+    length: 15, elevationStart: -1.2, elevationEnd: -1.2
+  },
+
+  // T03: コカ・コーラコーナー（左コーナー）- ドリフトポイント
+  {
+    id: "T03", type: "corner", name: "コカ・コーラコーナー",
+    direction: "left", angle: 60, radius: 6.0,
+    elevationStart: -1.2, elevationEnd: -1.5,
     difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
+
+  // S04: 100Rアプローチ
   {
-    id: "S02", type: "straight", name: "第1セクター",
-    length: 32, elevationStart: -0.2, elevationEnd: -0.1
+    id: "S04", type: "straight", name: "100Rアプローチ",
+    length: 18, elevationStart: -1.5, elevationEnd: -1.5
   },
+
+  // T04: 100R（高速右コーナー複合）- ドリフトポイント
   {
-    id: "T02", type: "corner", name: "コカ・コーラコーナー",
-    direction: "right", angle: 65, radius: 9.0,
-    elevationStart: -0.1, elevationEnd: 0,
-    difficulty: 2, driftRingSpeed: 0.9, driftTargetSize: 48
-  },
-  {
-    id: "S03", type: "straight", name: "第2セクター",
-    length: 32, elevationStart: 0, elevationEnd: 0.1
-  },
-  {
-    id: "T03", type: "corner", name: "ADVANコーナー",
-    direction: "right", angle: 80, radius: 8.0,
-    elevationStart: 0.1, elevationEnd: 0.2,
+    id: "T04", type: "corner", name: "100R",
+    direction: "right", angle: 70, radius: 7.0,
+    elevationStart: -1.5, elevationEnd: -2.0,
     difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
+
+  // S05: ヘアピンブレーキングゾーン
   {
-    id: "S04", type: "straight", name: "バックストレート",
-    length: 36, elevationStart: 0.2, elevationEnd: 0.3
+    id: "S05", type: "straight", name: "ヘアピンアプローチ",
+    length: 15, elevationStart: -2.0, elevationEnd: -2.2
   },
+
+  // T05: ADVANコーナー（ヘアピン）- 最低速ポイント、ドリフトポイント
   {
-    id: "T04", type: "corner", name: "ダンロップコーナー",
-    direction: "right", angle: 60, radius: 10.0,
-    elevationStart: 0.3, elevationEnd: 0.2,
-    difficulty: 2, driftRingSpeed: 0.9, driftTargetSize: 48
+    id: "T05", type: "corner", name: "ADVANコーナー",
+    direction: "right", angle: 140, radius: 3.0,
+    elevationStart: -2.2, elevationEnd: -2.0,
+    difficulty: 5, driftRingSpeed: 1.4, driftTargetSize: 36
   },
+
+  // S06: バックストレート（加速区間）
   {
-    id: "S05", type: "straight", name: "第3セクター",
-    length: 28, elevationStart: 0.2, elevationEnd: 0.1
+    id: "S06", type: "straight", name: "バックストレート",
+    length: 30, elevationStart: -2.0, elevationEnd: -1.0
   },
+
+  // T06: 300R（高速右、形状再現用・ドリフトなし）
   {
-    id: "T05", type: "corner", name: "ファイナルコーナー",
-    direction: "right", angle: 75, radius: 8.5,
-    elevationStart: 0.1, elevationEnd: 0,
-    difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
+    id: "T06", type: "corner", name: "300R",
+    direction: "right", angle: 35, radius: 10.0,
+    elevationStart: -1.0, elevationEnd: -0.5,
+    noDrift: true
   },
+
+  // S07: 全開区間
   {
-    id: "S06", type: "straight", name: "最終ストレート",
-    length: 38, elevationStart: 0, elevationEnd: 0
+    id: "S07", type: "straight", name: "全開区間",
+    length: 18, elevationStart: -0.5, elevationEnd: 0
+  },
+
+  // T07: ダンロップシケイン方向（左、形状再現用・ドリフトなし）
+  {
+    id: "T07", type: "corner", name: "ダンロップコーナー",
+    direction: "left", angle: 35, radius: 8.0,
+    elevationStart: 0, elevationEnd: 0.5,
+    noDrift: true
+  },
+
+  // S08: セクター3（急上り区間）
+  {
+    id: "S08", type: "straight", name: "セクター3",
+    length: 12, elevationStart: 0.5, elevationEnd: 1.0
+  },
+
+  // T08: 最終コーナー - ドリフトポイント（脱出速度がストレートに直結）
+  {
+    id: "T08", type: "corner", name: "最終コーナー",
+    direction: "right", angle: 80, radius: 5.0,
+    elevationStart: 1.0, elevationEnd: 0.5,
+    difficulty: 4, driftRingSpeed: 1.2, driftTargetSize: 40
+  },
+
+  // S09: 最終ストレート（メインストレートに合流）
+  {
+    id: "S09", type: "straight", name: "最終ストレート",
+    length: 25, elevationStart: 0.5, elevationEnd: 0
   }
 ];
 
