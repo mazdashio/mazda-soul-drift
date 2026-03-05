@@ -283,6 +283,17 @@ canvas {
   letter-spacing: 2px;
 }
 
+/* ===== Minimap ===== */
+#minimap-canvas {
+  position: absolute;
+  top: 52px;
+  right: 16px;
+  width: 140px;
+  height: 140px;
+  pointer-events: none;
+  border-radius: 8px;
+}
+
 #hud-corner-name {
   position: absolute;
   top: 50%;

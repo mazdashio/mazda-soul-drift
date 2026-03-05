@@ -229,6 +229,10 @@
       currentSpeed *= 0.95;
     }
     
+    // Minimum speed floor — never let car appear to stop
+    var minSpeed = carData.baseSpeed * 0.65;
+    if (currentSpeed < minSpeed) currentSpeed = minSpeed;
+    
     speed = currentSpeed;
     
     // Move forward
@@ -344,6 +348,11 @@
       boosting: boostTimer > 0,
       boostMul: boostMul
     });
+    
+    // Update minimap
+    if (courseData.minimapPoints) {
+      drawMinimap(progress);
+    }
   }
   
   function updateCarPosition() {
@@ -456,6 +465,89 @@
     shakeTimer = duration;
   }
   
+  // ===== Minimap =====
+  var minimapCanvas = null;
+  var minimapCtx = null;
+  var minimapSize = 140;
+  
+  function initMinimap() {
+    minimapCanvas = document.getElementById('minimap-canvas');
+    if (!minimapCanvas) return;
+    minimapCanvas.width = minimapSize;
+    minimapCanvas.height = minimapSize;
+    minimapCtx = minimapCanvas.getContext('2d');
+  }
+  
+  function drawMinimap(progress) {
+    if (!minimapCtx || !courseData.minimapPoints) return;
+    var pts = courseData.minimapPoints;
+    var ctx = minimapCtx;
+    var size = minimapSize;
+    var padding = 12;
+    
+    ctx.clearRect(0, 0, size, size);
+    
+    // Semi-transparent background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, 0, size, size);
+    
+    // Find bounds
+    var minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    for (var i = 0; i < pts.length; i++) {
+      if (pts[i].x < minX) minX = pts[i].x;
+      if (pts[i].x > maxX) maxX = pts[i].x;
+      if (pts[i].z < minZ) minZ = pts[i].z;
+      if (pts[i].z > maxZ) maxZ = pts[i].z;
+    }
+    
+    var rangeX = maxX - minX || 1;
+    var rangeZ = maxZ - minZ || 1;
+    var scale = (size - padding * 2) / Math.max(rangeX, rangeZ);
+    var offsetX = padding + (size - padding * 2 - rangeX * scale) / 2;
+    var offsetZ = padding + (size - padding * 2 - rangeZ * scale) / 2;
+    
+    function toScreen(p) {
+      return {
+        x: offsetX + (p.x - minX) * scale,
+        y: offsetZ + (p.z - minZ) * scale
+      };
+    }
+    
+    // Draw course outline
+    ctx.beginPath();
+    var sp = toScreen(pts[0]);
+    ctx.moveTo(sp.x, sp.y);
+    for (var i = 1; i < pts.length; i++) {
+      sp = toScreen(pts[i]);
+      ctx.lineTo(sp.x, sp.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    
+    // Start/finish marker
+    var startPt = toScreen(pts[0]);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(startPt.x - 3, startPt.y - 3, 6, 6);
+    
+    // Car position dot
+    var carIdx = Math.floor(progress * pts.length) % pts.length;
+    var carPt = toScreen(pts[carIdx]);
+    
+    // Glow
+    ctx.beginPath();
+    ctx.arc(carPt.x, carPt.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(168, 0, 0, 0.6)';
+    ctx.fill();
+    
+    // Dot
+    ctx.beginPath();
+    ctx.arc(carPt.x, carPt.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#FF3344';
+    ctx.fill();
+  }
+  
   // ===== Main Loop =====
   function animate() {
     requestAnimationFrame(animate);
@@ -482,6 +574,7 @@
     DriftSystem.init(onDriftJudgment);
     initInput();
     
+    initMinimap();
     UIManager.showScreen('title');
     
     // Pre-render scene for background

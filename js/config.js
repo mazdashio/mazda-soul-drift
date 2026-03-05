@@ -35,7 +35,7 @@ var COURSE_SEGMENTS = [
     id: "T02", type: "corner", name: "ターン2",
     direction: "right", angle: 40, radius: 4.0,
     elevationStart: -0.8, elevationEnd: -1.0,
-    difficulty: 1, driftRingSpeed: 0.6, driftTargetSize: 55
+    difficulty: 2, driftRingSpeed: 0.8, driftTargetSize: 50
   },
   {
     id: "S03", type: "straight", name: "T2-T3区間",
@@ -237,7 +237,7 @@ var DRIFT_JUDGE = {
   PERFECT: { maxDiff: 8,  score: 1000, boostMul: 0.40, boostDur: 3.0, color: "#00FF88", label: "PERFECT" },
   GREAT:   { maxDiff: 18, score: 600,  boostMul: 0.25, boostDur: 2.0, color: "#FFD700", label: "GREAT" },
   GOOD:    { maxDiff: 30, score: 300,  boostMul: 0.10, boostDur: 1.0, color: "#FF8800", label: "GOOD" },
-  MISS:    { maxDiff: 999,score: 0,    boostMul: -0.20,boostDur: 2.0, color: "#FF3344", label: "MISS" }
+  MISS:    { maxDiff: 999,score: 0,    boostMul: -0.15,boostDur: 1.5, color: "#FF3344", label: "MISS" }
 };
 
 // ===== Title Thresholds =====

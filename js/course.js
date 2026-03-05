@@ -344,15 +344,23 @@ var CourseBuilder = (function() {
     // Environment
     buildEnvironment(scene, spline);
     
+    // Center lane dashes for speed perception
+    var centerDashes = buildCenterDashes(spline, splineLength);
+    scene.add(centerDashes);
+    
     // Build segment distance lookup
     // CRITICAL: use spline arc length as canonical distance to match getPointAt(t)
     var segLookup = buildSegmentLookup(pathData, spline, splineLength);
+    
+    // Generate minimap 2D points
+    var minimapPoints = generateMinimapPoints(spline);
     
     return {
       spline: spline,
       totalDistance: splineLength,
       pathData: pathData,
-      segLookup: segLookup
+      segLookup: segLookup,
+      minimapPoints: minimapPoints
     };
   }
   
@@ -416,6 +424,53 @@ var CourseBuilder = (function() {
         return this.getSegmentAt(distance + lookahead);
       }
     };
+  }
+  
+  // Build center lane dashes for better speed perception
+  function buildCenterDashes(spline, totalDistance) {
+    var group = new THREE.Group();
+    var dashLength = 0.8;
+    var gapLength = 1.6;
+    var cycleLength = dashLength + gapLength;
+    var numDashes = Math.floor(totalDistance / cycleLength);
+    
+    var dashGeom = new THREE.PlaneGeometry(0.08, dashLength);
+    var dashMat = new THREE.MeshBasicMaterial({ color: 0xCCCCCC, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+    
+    var instanced = new THREE.InstancedMesh(dashGeom, dashMat, numDashes);
+    var dummy = new THREE.Object3D();
+    
+    for (var i = 0; i < numDashes; i++) {
+      var t = (i * cycleLength + dashLength * 0.5) / totalDistance;
+      t = t % 1.0;
+      var point = spline.getPointAt(t);
+      var tangent = spline.getTangentAt(t);
+      
+      dummy.position.copy(point);
+      dummy.position.y += 0.10;
+      
+      // Rotate to align with road direction
+      var angle = Math.atan2(tangent.x, tangent.z);
+      dummy.rotation.set(-Math.PI / 2, 0, angle);
+      dummy.updateMatrix();
+      instanced.setMatrixAt(i, dummy.matrix);
+    }
+    
+    instanced.instanceMatrix.needsUpdate = true;
+    group.add(instanced);
+    return group;
+  }
+  
+  // Generate 2D minimap points from spline
+  function generateMinimapPoints(spline) {
+    var numPoints = 200;
+    var points = [];
+    for (var i = 0; i < numPoints; i++) {
+      var t = i / numPoints;
+      var p = spline.getPointAt(t);
+      points.push({ x: p.x, z: p.z });
+    }
+    return points;
   }
   
   return { build: build };
