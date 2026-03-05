@@ -19,147 +19,147 @@ var ELEVATION_SCALE = 0.45;
 var COURSE_SEGMENTS = [
   {
     id: "S01", type: "straight", name: "メインストレート",
-    length: 100, elevationStart: 0, elevationEnd: 0
+    length: 25, elevationStart: 0, elevationEnd: 0
   },
   {
     id: "T01", type: "corner", name: "TGRコーナー",
-    direction: "right", angle: 130, radius: 2.7,
-    elevationStart: 0, elevationEnd: -2.0,
+    direction: "right", angle: 130, radius: 1.5,
+    elevationStart: 0, elevationEnd: -0.5,
     difficulty: 5, driftRingSpeed: 1.3, driftTargetSize: 35
   },
   {
     id: "S02", type: "straight", name: "T1-T2区間",
-    length: 10, elevationStart: -2.0, elevationEnd: -2.5
+    length: 5, elevationStart: -0.5, elevationEnd: -0.8
   },
   {
     id: "T02", type: "corner", name: "ターン2",
-    direction: "right", angle: 40, radius: 7.5,
-    elevationStart: -2.5, elevationEnd: -3.0,
+    direction: "right", angle: 40, radius: 4.0,
+    elevationStart: -0.8, elevationEnd: -1.0,
     difficulty: 1, driftRingSpeed: 0.6, driftTargetSize: 55
   },
   {
     id: "S03", type: "straight", name: "T2-T3区間",
-    length: 20, elevationStart: -3.0, elevationEnd: -2.5
+    length: 8, elevationStart: -1.0, elevationEnd: -0.8
   },
   {
     id: "T03", type: "corner", name: "コカ・コーラコーナー",
-    direction: "left", angle: 65, radius: 5.0,
-    elevationStart: -2.5, elevationEnd: -2.0,
+    direction: "left", angle: 65, radius: 3.0,
+    elevationStart: -0.8, elevationEnd: -0.5,
     difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
   {
     id: "S04", type: "straight", name: "T3-T4区間",
-    length: 15, elevationStart: -2.0, elevationEnd: -2.5
+    length: 6, elevationStart: -0.5, elevationEnd: -0.8
   },
   {
     id: "T04", type: "corner", name: "100Rフロント",
-    direction: "right", angle: 55, radius: 17.8,
-    elevationStart: -2.5, elevationEnd: -3.0,
+    direction: "right", angle: 55, radius: 8.0,
+    elevationStart: -0.8, elevationEnd: -1.0,
     difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
   {
     id: "T05", type: "corner", name: "100Rリア",
-    direction: "right", angle: 45, radius: 9.5,
-    elevationStart: -3.0, elevationEnd: -3.5,
+    direction: "right", angle: 45, radius: 5.0,
+    elevationStart: -1.0, elevationEnd: -1.2,
     difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
   {
     id: "S05", type: "straight", name: "T5-T6区間",
-    length: 12, elevationStart: -3.5, elevationEnd: -3.5
+    length: 5, elevationStart: -1.2, elevationEnd: -1.2
   },
   {
     id: "T06", type: "corner", name: "ADVANコーナー",
-    direction: "right", angle: 170, radius: 3.0,
-    elevationStart: -3.5, elevationEnd: -3.0,
+    direction: "right", angle: 170, radius: 2.0,
+    elevationStart: -1.2, elevationEnd: -1.0,
     difficulty: 5, driftRingSpeed: 1.4, driftTargetSize: 35
   },
   {
     id: "S06", type: "straight", name: "T6-T7区間",
-    length: 5, elevationStart: -3.0, elevationEnd: -3.0
+    length: 3, elevationStart: -1.0, elevationEnd: -1.0
   },
   {
     id: "T07", type: "corner", name: "ターン7",
-    direction: "right", angle: 30, radius: 16.5,
-    elevationStart: -3.0, elevationEnd: -3.0,
+    direction: "right", angle: 30, radius: 8.0,
+    elevationStart: -1.0, elevationEnd: -1.0,
     difficulty: 1, driftRingSpeed: 0.6, driftTargetSize: 55
   },
   {
     id: "S07", type: "straight", name: "T7-T8区間",
-    length: 20, elevationStart: -3.0, elevationEnd: -2.5
+    length: 10, elevationStart: -1.0, elevationEnd: -0.8
   },
   {
     id: "T08", type: "corner", name: "300Rフロント",
-    direction: "right", angle: 45, radius: 12.0,
-    elevationStart: -2.5, elevationEnd: -2.0,
+    direction: "right", angle: 45, radius: 6.0,
+    elevationStart: -0.8, elevationEnd: -0.5,
     difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
   {
     id: "T09", type: "corner", name: "300Rリア",
-    direction: "right", angle: 35, radius: 23.0,
-    elevationStart: -2.0, elevationEnd: -1.5,
+    direction: "right", angle: 35, radius: 10.0,
+    elevationStart: -0.5, elevationEnd: -0.3,
     difficulty: 3, driftRingSpeed: 0.8, driftTargetSize: 45
   },
   {
     id: "S08", type: "straight", name: "T9-T10区間",
-    length: 25, elevationStart: -1.5, elevationEnd: -0.5
+    length: 12, elevationStart: -0.3, elevationEnd: 0
   },
   {
     id: "T10", type: "corner", name: "ダンロップコーナー",
-    direction: "left", angle: 90, radius: 3.5,
-    elevationStart: -0.5, elevationEnd: 0.5,
+    direction: "left", angle: 90, radius: 2.5,
+    elevationStart: 0, elevationEnd: 0.2,
     difficulty: 4, driftRingSpeed: 1.2, driftTargetSize: 38
   },
   {
     id: "T11", type: "corner", name: "ターン11",
-    direction: "right", angle: 90, radius: 3.5,
-    elevationStart: 0.5, elevationEnd: 1.0,
+    direction: "right", angle: 90, radius: 2.5,
+    elevationStart: 0.2, elevationEnd: 0.4,
     difficulty: 4, driftRingSpeed: 1.2, driftTargetSize: 38
   },
   {
     id: "T12", type: "corner", name: "ターン12",
-    direction: "left", angle: 90, radius: 3.5,
-    elevationStart: 1.0, elevationEnd: 1.5,
+    direction: "left", angle: 90, radius: 2.5,
+    elevationStart: 0.4, elevationEnd: 0.5,
     difficulty: 4, driftRingSpeed: 1.2, driftTargetSize: 38
   },
   {
     id: "S09", type: "straight", name: "T12-T13区間",
-    length: 8, elevationStart: 1.5, elevationEnd: 2.5
+    length: 4, elevationStart: 0.5, elevationEnd: 0.8
   },
   {
     id: "T13", type: "corner", name: "ターン13",
-    direction: "right", angle: 80, radius: 5.0,
-    elevationStart: 2.5, elevationEnd: 3.0,
+    direction: "right", angle: 80, radius: 3.0,
+    elevationStart: 0.8, elevationEnd: 1.0,
     difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
   {
     id: "S10", type: "straight", name: "T13-T14区間",
-    length: 6, elevationStart: 3.0, elevationEnd: 3.5
+    length: 3, elevationStart: 1.0, elevationEnd: 1.2
   },
   {
     id: "T14", type: "corner", name: "GR Supraフロント",
-    direction: "right", angle: 70, radius: 4.5,
-    elevationStart: 3.5, elevationEnd: 3.8,
+    direction: "right", angle: 70, radius: 3.0,
+    elevationStart: 1.2, elevationEnd: 1.3,
     difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
   {
     id: "T15", type: "corner", name: "GR Supraリア",
-    direction: "left", angle: 70, radius: 4.5,
-    elevationStart: 3.8, elevationEnd: 4.0,
+    direction: "left", angle: 70, radius: 3.0,
+    elevationStart: 1.3, elevationEnd: 1.4,
     difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
   {
     id: "S11", type: "straight", name: "T15-T16区間",
-    length: 8, elevationStart: 4.0, elevationEnd: 4.0
+    length: 4, elevationStart: 1.4, elevationEnd: 1.4
   },
   {
     id: "T16", type: "corner", name: "ファイナルコーナー",
-    direction: "right", angle: 90, radius: 6.0,
-    elevationStart: 4.0, elevationEnd: 3.0,
+    direction: "right", angle: 90, radius: 3.5,
+    elevationStart: 1.4, elevationEnd: 0.8,
     difficulty: 5, driftRingSpeed: 1.3, driftTargetSize: 35
   },
   {
     id: "S12", type: "straight", name: "最終ストレート",
-    length: 30, elevationStart: 3.0, elevationEnd: 0
+    length: 12, elevationStart: 0.8, elevationEnd: 0
   }
 ];
 
@@ -250,8 +250,8 @@ var TITLES = [
 ];
 
 // ===== Game speed tuning =====
-// Target: 3 laps in ~2-3 minutes
-var BASE_GAME_SPEED = 7;   // units per second at multiplier 1.0
+// Target: ~30 sec per lap, 3 laps in ~90 seconds
+var BASE_GAME_SPEED = 9;   // units per second at multiplier 1.0
 var RING_SHRINK_BASE = 55; // px per second base shrink rate
 var RING_START_RADIUS = 120;
 
