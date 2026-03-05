@@ -17,61 +17,62 @@ var ELEVATION_SCALE = 0.45;
 // Scale: 1/10 of real distance
 // Elevations are raw values; scaled by ELEVATION_SCALE at build time
 var COURSE_SEGMENTS = [
-  // ===== 5コーナー構成: 高品質レイアウト =====
-  // ゆとりある直線 + 個性的な5コーナーで ~30秒/周
+  // ===== 5コーナー構成: 緩やかなカーブ =====
+  // 全て右カーブ、各60-80°で合計360°。自然なオーバル型コース。
+  // 目標: ~30秒/周
   {
     id: "S01", type: "straight", name: "メインストレート",
     length: 42, elevationStart: 0, elevationEnd: 0
   },
   {
     id: "T01", type: "corner", name: "TGRコーナー",
-    direction: "right", angle: 120, radius: 5.0,
-    elevationStart: 0, elevationEnd: -0.5,
+    direction: "right", angle: 80, radius: 8.0,
+    elevationStart: 0, elevationEnd: -0.2,
     difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
   {
     id: "S02", type: "straight", name: "第1セクター",
-    length: 30, elevationStart: -0.5, elevationEnd: -0.3
+    length: 32, elevationStart: -0.2, elevationEnd: -0.1
   },
   {
     id: "T02", type: "corner", name: "コカ・コーラコーナー",
-    direction: "left", angle: 30, radius: 6.0,
-    elevationStart: -0.3, elevationEnd: 0,
-    difficulty: 2, driftRingSpeed: 0.8, driftTargetSize: 50
+    direction: "right", angle: 65, radius: 9.0,
+    elevationStart: -0.1, elevationEnd: 0,
+    difficulty: 2, driftRingSpeed: 0.9, driftTargetSize: 48
   },
   {
     id: "S03", type: "straight", name: "第2セクター",
-    length: 32, elevationStart: 0, elevationEnd: -0.2
+    length: 32, elevationStart: 0, elevationEnd: 0.1
   },
   {
     id: "T03", type: "corner", name: "ADVANコーナー",
-    direction: "right", angle: 150, radius: 4.0,
-    elevationStart: -0.2, elevationEnd: 0.2,
-    difficulty: 5, driftRingSpeed: 1.3, driftTargetSize: 38
+    direction: "right", angle: 80, radius: 8.0,
+    elevationStart: 0.1, elevationEnd: 0.2,
+    difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
   {
     id: "S04", type: "straight", name: "バックストレート",
-    length: 38, elevationStart: 0.2, elevationEnd: 0.5
+    length: 36, elevationStart: 0.2, elevationEnd: 0.3
   },
   {
     id: "T04", type: "corner", name: "ダンロップコーナー",
-    direction: "left", angle: 30, radius: 6.0,
-    elevationStart: 0.5, elevationEnd: 0.3,
-    difficulty: 2, driftRingSpeed: 0.8, driftTargetSize: 50
+    direction: "right", angle: 60, radius: 10.0,
+    elevationStart: 0.3, elevationEnd: 0.2,
+    difficulty: 2, driftRingSpeed: 0.9, driftTargetSize: 48
   },
   {
     id: "S05", type: "straight", name: "第3セクター",
-    length: 28, elevationStart: 0.3, elevationEnd: 0.5
+    length: 28, elevationStart: 0.2, elevationEnd: 0.1
   },
   {
     id: "T05", type: "corner", name: "ファイナルコーナー",
-    direction: "right", angle: 150, radius: 4.5,
-    elevationStart: 0.5, elevationEnd: 0.3,
-    difficulty: 4, driftRingSpeed: 1.2, driftTargetSize: 40
+    direction: "right", angle: 75, radius: 8.5,
+    elevationStart: 0.1, elevationEnd: 0,
+    difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
   {
     id: "S06", type: "straight", name: "最終ストレート",
-    length: 38, elevationStart: 0.3, elevationEnd: 0
+    length: 38, elevationStart: 0, elevationEnd: 0
   }
 ];
 
@@ -171,4 +172,4 @@ var RING_START_RADIUS = 120;
 var RING_MIN_DISPLAY_TIME = 0.8;
 
 // ===== Corner lookahead distance (units) =====
-var CORNER_LOOKAHEAD = 3.0;
+var CORNER_LOOKAHEAD = 5.0;

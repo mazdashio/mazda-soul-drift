@@ -577,9 +577,15 @@
     initMinimap();
     UIManager.showScreen('title');
     
-    // Pre-render scene for background
-    camera.position.set(0, 80, 0);
-    camera.lookAt(0, 0, 0);
+    // Pre-render scene for background — position camera at start line looking down the track
+    var startPt = courseData.spline.getPointAt(0);
+    var startTan = courseData.spline.getTangentAt(0);
+    camera.position.set(
+      startPt.x - startTan.x * 3,
+      startPt.y + 2.5,
+      startPt.z - startTan.z * 3
+    );
+    camera.lookAt(startPt.x + startTan.x * 10, startPt.y + 0.5, startPt.z + startTan.z * 10);
     renderer.render(scene, camera);
     
     animate();
