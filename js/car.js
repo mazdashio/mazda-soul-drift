@@ -124,8 +124,8 @@ var CarBuilder = (function() {
     shadow.position.y = 0.03;
     group.add(shadow);
     
-    // Scale down a bit
-    group.scale.set(0.8, 0.8, 0.8);
+    // Slightly larger so the car is more readable on screen
+    group.scale.set(1.05, 1.05, 1.05);
     
     return group;
   }
