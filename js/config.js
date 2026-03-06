@@ -16,23 +16,23 @@ var COURSE_CONTROL_POINTS = [
   { x:   0, z:   0, y:  0.00 },  // P0:  Start/Finish
   { x:  30, z:   0, y:  0.00 },  // P1:  Mid main straight
   { x:  60, z:   0, y:  0.00 },  // P2:  End main straight
-  { x:  75, z:  -3, y: -0.30 },  // P3:  T1 entry (TGR corner)
-  { x:  82, z: -14, y: -0.60 },  // P4:  T1 mid
-  { x:  80, z: -28, y: -0.90 },  // P5:  T1 exit
-  { x:  75, z: -38, y: -1.05 },  // P6:  T2 area (gentle right)
-  { x:  68, z: -48, y: -1.20 },  // P7:  T3 entry (Coca-Cola)
-  { x:  58, z: -55, y: -1.35 },  // P8:  T3 exit
-  { x:  45, z: -65, y: -1.55 },  // P9:  100R approach
-  { x:  32, z: -75, y: -1.75 },  // P10: T4 (100R)
-  { x:  20, z: -82, y: -1.95 },  // P11: Hairpin approach
-  { x:  10, z: -80, y: -1.75 },  // P12: T5 hairpin apex
-  { x:   5, z: -70, y: -1.55 },  // P13: T5 exit
-  { x:   0, z: -55, y: -1.30 },  // P14: Back straight start
-  { x:  -5, z: -38, y: -1.05 },  // P15: Back straight mid
-  { x: -10, z: -22, y: -0.80 },  // P16: T6 area (300R)
-  { x: -13, z: -10, y: -0.55 },  // P17: T7 area (Dunlop)
-  { x: -12, z:   2, y: -0.30 },  // P18: T8 entry (Final corner)
-  { x:  -6, z:   8, y: -0.05 },  // P19: T8 exit
+  { x:  75, z:   3, y: -0.30 },  // P3:  T1 entry (TGR corner)
+  { x:  82, z:  14, y: -0.60 },  // P4:  T1 mid
+  { x:  80, z:  28, y: -0.90 },  // P5:  T1 exit
+  { x:  75, z:  38, y: -1.05 },  // P6:  T2 area (gentle right)
+  { x:  68, z:  48, y: -1.20 },  // P7:  T3 entry (Coca-Cola)
+  { x:  58, z:  55, y: -1.35 },  // P8:  T3 exit
+  { x:  45, z:  65, y: -1.55 },  // P9:  100R approach
+  { x:  32, z:  75, y: -1.75 },  // P10: T4 (100R)
+  { x:  20, z:  82, y: -1.95 },  // P11: Hairpin approach
+  { x:  10, z:  80, y: -1.75 },  // P12: T5 hairpin apex
+  { x:   5, z:  70, y: -1.55 },  // P13: T5 exit
+  { x:   0, z:  55, y: -1.30 },  // P14: Back straight start
+  { x:  -5, z:  38, y: -1.05 },  // P15: Back straight mid
+  { x: -10, z:  22, y: -0.80 },  // P16: T6 area (300R)
+  { x: -13, z:  10, y: -0.55 },  // P17: T7 area (Dunlop)
+  { x: -12, z:  -2, y: -0.30 },  // P18: T8 entry (Final corner)
+  { x:  -6, z:  -8, y: -0.05 },  // P19: T8 exit
 ];
 
 // ===== Segment Definitions =====
@@ -197,4 +197,5 @@ var RING_START_RADIUS = 120;
 var RING_MIN_DISPLAY_TIME = 0.8;
 
 // ===== Corner lookahead distance (units) =====
-var CORNER_LOOKAHEAD = 5.0;
+// Reduced to trigger drift ring closer to corner entry (not during straight)
+var CORNER_LOOKAHEAD = 2.5;

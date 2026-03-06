@@ -220,12 +220,12 @@ var CourseBuilder = (function() {
     scene.add(ground);
     
     // Inner tarmac/grass area (centered on course)
-    // Course center is roughly (30, -35)
+    // Course center is roughly (30, 35) - clockwise layout
     var innerGeom = new THREE.PlaneGeometry(120, 110);
     var innerMat = new THREE.MeshLambertMaterial({ color: 0x337733 });
     var inner = new THREE.Mesh(innerGeom, innerMat);
     inner.rotation.x = -Math.PI / 2;
-    inner.position.set(30, -2.45, -35);
+    inner.position.set(30, -2.45, 35);
     scene.add(inner);
     
     // Sky (bright blue daytime)
@@ -250,7 +250,7 @@ var CourseBuilder = (function() {
   // Positioned north of the track (positive Z direction from main straight)
   function buildMtFuji(scene) {
     var fujiGroup = new THREE.Group();
-    var fujiX = 30, fujiZ = 280; // North of track, visible from main straight
+    var fujiX = 30, fujiZ = -280; // South of track, visible from main straight (track goes clockwise into +Z)
     
     // Mountain base (wider, darker)
     var baseGeom = new THREE.ConeGeometry(120, 20, 16);
@@ -433,7 +433,7 @@ var CourseBuilder = (function() {
       var treePos = tPoint.clone().add(tRight.clone().multiplyScalar(tSide * tDist));
       treePos.y = -2.5;
       // Skip trees in grandstand/pit area (main straight runs X=0..60, Z~0)
-      if (treePos.x > -5 && treePos.x < 65 && treePos.z > -8 && treePos.z < 18) continue;
+      if (treePos.x > -5 && treePos.x < 65 && treePos.z > -18 && treePos.z < 8) continue;
       treePositions.push(treePos);
     }
     
@@ -441,9 +441,9 @@ var CourseBuilder = (function() {
     for (var bi = 0; bi < 100; bi++) {
       var bAngle = Math.random() * Math.PI * 2;
       var bDist = 60 + Math.random() * 140;
-      // Center backdrop trees around course center (30, -35)
-      var bPos = new THREE.Vector3(30 + Math.cos(bAngle) * bDist, -2.5, -35 + Math.sin(bAngle) * bDist);
-      if (bPos.x > -5 && bPos.x < 65 && bPos.z > -8 && bPos.z < 18) continue;
+      // Center backdrop trees around course center (30, 35) - clockwise
+      var bPos = new THREE.Vector3(30 + Math.cos(bAngle) * bDist, -2.5, 35 + Math.sin(bAngle) * bDist);
+      if (bPos.x > -5 && bPos.x < 65 && bPos.z > -18 && bPos.z < 8) continue;
       treePositions.push(bPos);
     }
     
