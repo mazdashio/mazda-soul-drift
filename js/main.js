@@ -44,14 +44,21 @@
   var shakeIntensity = 0;
   var shakeTimer = 0;
   
+  // Camera dynamics
+  var baseFOV = 75;
+  var targetFOV = 75;
+  var currentFOV = 75;
+  var cameraLagFactor = 0.14;  // smoothing factor for camera follow
+  var cornerCamTilt = 0;       // lateral tilt in corners
+  
   // ===== Initialization =====
   function initThree() {
     scene = new THREE.Scene();
     
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(baseFOV, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 5, 10);
     
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.insertBefore(renderer.domElement, document.body.firstChild);
@@ -155,7 +162,11 @@
     inCorner = false;
     shakeIntensity = 0;
     shakeTimer = 0;
+    targetFOV = baseFOV;
+    currentFOV = baseFOV;
+    cornerCamTilt = 0;
     DriftSystem.resetLap();
+    EffectsSystem.hideAll();
   }
   
   function startRace() {
@@ -333,12 +344,42 @@
     // Update car position
     updateCarPosition();
     
-    // Update camera
+    // Update camera with dynamic FOV
     updateCamera(false);
+    
+    // FOV: widen during boost, narrow in corners
+    if (boostTimer > 0 && boostMul > 0) {
+      targetFOV = baseFOV + boostMul * 15; // up to +6 degrees FOV when boosting
+    } else if (inCorner) {
+      targetFOV = baseFOV - 3; // slightly tighter in corners for intensity
+    } else {
+      targetFOV = baseFOV;
+    }
+    currentFOV += (targetFOV - currentFOV) * 0.08;
+    camera.fov = currentFOV;
+    camera.updateProjectionMatrix();
     
     // Camera shake
     if (shakeTimer > 0) {
       shakeTimer -= dt;
+    }
+    
+    // 3D Effects update
+    EffectsSystem.update(dt);
+    
+    // Compute tangent once for effects (reuse cached t value)
+    if (carModel) {
+      var tFx = (distance % lapDist) / lapDist;
+      tFx = Math.max(0, Math.min(tFx, 0.9999));
+      var tangentFx = courseData.spline.getTangentAt(tFx);
+      
+      // Boost flame effect (continuous while boosting)
+      if (boostTimer > 0 && boostMul > 0) {
+        EffectsSystem.triggerBoostFlames(carModel.position, tangentFx, boostMul);
+      }
+      
+      // 3D Speed lines at high speed
+      EffectsSystem.activateSpeedLines(carModel.position, tangentFx, speed);
     }
     
     // Engine sound
@@ -355,7 +396,8 @@
       progress: progress,
       score: totalScore,
       boosting: boostTimer > 0,
-      boostMul: boostMul
+      boostMul: boostMul,
+      inCorner: inCorner
     });
     
     // Update minimap
@@ -400,31 +442,54 @@
     var up = new THREE.Vector3(0, 1, 0);
     var right = new THREE.Vector3().crossVectors(tangent, up).normalize();
     
-    // Camera behind and above car — closer for better road visibility
-    var camOffset = tangent.clone().multiplyScalar(-2.2);
-    camOffset.y = 1.2;
-    
-    // Slight lateral shift in corners
-    if (inCorner) {
-      camOffset.add(right.clone().multiplyScalar(lateralOffset * 0.3));
+    // Camera behind and above car
+    // Pull back more during boost for dramatic effect
+    var camDist = 2.2;
+    var camHeight = 1.2;
+    if (boostTimer > 0 && boostMul > 0) {
+      camDist = 2.2 + boostMul * 0.8;  // pull back during boost
+      camHeight = 1.0;                  // lower during boost
     }
     
+    var camOffset = tangent.clone().multiplyScalar(-camDist);
+    camOffset.y = camHeight;
+    
+    // Dynamic lateral shift in corners - more dramatic
+    var targetTilt = 0;
+    if (inCorner) {
+      targetTilt = lateralOffset * 0.5;
+      camOffset.add(right.clone().multiplyScalar(targetTilt));
+      // Slightly raise camera in corners for better overview
+      camOffset.y += 0.15;
+    }
+    cornerCamTilt += (targetTilt - cornerCamTilt) * 0.06;
+    
     var targetPos = carModel.position.clone().add(camOffset);
-    var lookPos = carModel.position.clone().add(tangent.clone().multiplyScalar(2.5));
+    
+    // Look further ahead during boost
+    var lookAhead = 2.5;
+    if (boostTimer > 0 && boostMul > 0) {
+      lookAhead = 4.0;  // look further ahead when boosting
+    }
+    var lookPos = carModel.position.clone().add(tangent.clone().multiplyScalar(lookAhead));
     lookPos.y = carModel.position.y + 0.3;
     
     // Camera shake
     if (shakeTimer > 0) {
-      var shakeX = (Math.random() - 0.5) * shakeIntensity;
-      var shakeY = (Math.random() - 0.5) * shakeIntensity;
+      var shakeDecay = shakeTimer / 0.5; // decay factor
+      var shakeX = (Math.random() - 0.5) * shakeIntensity * shakeDecay;
+      var shakeY = (Math.random() - 0.5) * shakeIntensity * shakeDecay;
       targetPos.x += shakeX;
       targetPos.y += shakeY;
     }
     
+    // Smoother camera interpolation - faster response during boost
+    var lerpFactor = (boostTimer > 0 && boostMul > 0) ? 0.18 : cameraLagFactor;
+    
     if (instant) {
       camera.position.copy(targetPos);
     } else {
-      camera.position.lerp(targetPos, 0.14);
+      camera.position.lerp(targetPos, lerpFactor);
     }
     camera.lookAt(lookPos);
   }
@@ -446,6 +511,22 @@
     }
     if (AudioManager.playBoost && boostMul > 0) {
       AudioManager.playBoost();
+    }
+    
+    // 3D spark effects on drift judgment
+    if (carModel && courseData) {
+      var lapDistJ = courseData.segLookup.totalDist;
+      var tJ = (distance % lapDistJ) / lapDistJ;
+      tJ = Math.max(0, Math.min(tJ, 0.9999));
+      var tangentJ = courseData.spline.getTangentAt(tJ);
+      
+      if (judge.label === "PERFECT") {
+        EffectsSystem.triggerSparks(carModel.position, tangentJ, 1.0);
+      } else if (judge.label === "GREAT") {
+        EffectsSystem.triggerSparks(carModel.position, tangentJ, 0.7);
+      } else if (judge.label === "GOOD") {
+        EffectsSystem.triggerSparks(carModel.position, tangentJ, 0.3);
+      }
     }
     
     // Count
@@ -581,6 +662,7 @@
     initCourse();
     UIManager.init();
     DriftSystem.init(onDriftJudgment);
+    EffectsSystem.init(scene);
     initInput();
     
     initMinimap();

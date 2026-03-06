@@ -40,6 +40,22 @@ var UIManager = (function() {
       elements.speedLines.id = 'speed-lines';
       document.body.appendChild(elements.speedLines);
     }
+
+    // Corner vignette overlay
+    elements.cornerVignette = document.getElementById('corner-vignette');
+    if (!elements.cornerVignette) {
+      elements.cornerVignette = document.createElement('div');
+      elements.cornerVignette.id = 'corner-vignette';
+      document.body.appendChild(elements.cornerVignette);
+    }
+
+    // Boost glow border
+    elements.boostGlow = document.getElementById('boost-glow');
+    if (!elements.boostGlow) {
+      elements.boostGlow = document.createElement('div');
+      elements.boostGlow.id = 'boost-glow';
+      document.body.appendChild(elements.boostGlow);
+    }
   }
   
   function showScreen(name) {
@@ -73,6 +89,15 @@ var UIManager = (function() {
     if (elements.speedLines) {
       var active = (data.boosting && (data.boostMul || 0) > 0);
       elements.speedLines.classList.toggle('active', !!active);
+    }
+    // Corner vignette
+    if (elements.cornerVignette) {
+      elements.cornerVignette.classList.toggle('active', !!data.inCorner);
+    }
+    // Boost glow border
+    if (elements.boostGlow) {
+      var boostGlowActive = (data.boosting && (data.boostMul || 0) > 0);
+      elements.boostGlow.classList.toggle('active', !!boostGlowActive);
     }
     if (elements.hudProgressFill) {
       elements.hudProgressFill.style.width = (data.progress * 100) + '%';
