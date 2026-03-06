@@ -8,136 +8,96 @@ var TOTAL_LAPS = 3;
 var ROAD_WIDTH = 3.0;       // Game units – wider for better visibility
 var ROAD_HALF_WIDTH = 1.5;
 
-// ===== Elevation scale factor =====
-// Real Fuji ~35m elevation change. At 1/10 scale = 3.5 units.
-// Raw data sums to ~7.5 units range. Scale by 0.45 for realism.
-var ELEVATION_SCALE = 0.45;
+// ===== Course Control Points (Fuji Speedway) =====
+// Explicit 2D control points forming a closed Fuji Speedway shape.
+// CatmullRom spline interpolation with closed=true for smooth loop.
+// This approach guarantees no overlap and proper spatial closure.
+var COURSE_CONTROL_POINTS = [
+  { x:   0, z:   0, y:  0.00 },  // P0:  Start/Finish
+  { x:  30, z:   0, y:  0.00 },  // P1:  Mid main straight
+  { x:  60, z:   0, y:  0.00 },  // P2:  End main straight
+  { x:  75, z:  -3, y: -0.30 },  // P3:  T1 entry (TGR corner)
+  { x:  82, z: -14, y: -0.60 },  // P4:  T1 mid
+  { x:  80, z: -28, y: -0.90 },  // P5:  T1 exit
+  { x:  75, z: -38, y: -1.05 },  // P6:  T2 area (gentle right)
+  { x:  68, z: -48, y: -1.20 },  // P7:  T3 entry (Coca-Cola)
+  { x:  58, z: -55, y: -1.35 },  // P8:  T3 exit
+  { x:  45, z: -65, y: -1.55 },  // P9:  100R approach
+  { x:  32, z: -75, y: -1.75 },  // P10: T4 (100R)
+  { x:  20, z: -82, y: -1.95 },  // P11: Hairpin approach
+  { x:  10, z: -80, y: -1.75 },  // P12: T5 hairpin apex
+  { x:   5, z: -70, y: -1.55 },  // P13: T5 exit
+  { x:   0, z: -55, y: -1.30 },  // P14: Back straight start
+  { x:  -5, z: -38, y: -1.05 },  // P15: Back straight mid
+  { x: -10, z: -22, y: -0.80 },  // P16: T6 area (300R)
+  { x: -13, z: -10, y: -0.55 },  // P17: T7 area (Dunlop)
+  { x: -12, z:   2, y: -0.30 },  // P18: T8 entry (Final corner)
+  { x:  -6, z:   8, y: -0.05 },  // P19: T8 exit
+];
 
-// ===== Course Segments (Fuji Speedway) =====
-// Scale: 1/10 of real distance
-// Elevations are raw values; scaled by ELEVATION_SCALE at build time
+// ===== Segment Definitions =====
+// Maps spline t-fractions to named segments with drift properties.
+// t-fractions are based on control point indices / total points.
 var COURSE_SEGMENTS = [
-  // ===== 富士スピードウェイ 実コースレイアウト =====
-  // 実際のコース形状を忠実に再現。5つのドリフトポイント + 3つの形状コーナー。
-  // 右回り（時計回り）。~30秒/周目標。
-  // Net turning: R(105+25+70+140+35+80) - L(60+35) = 455-95 = 360° ✓
-
-  // メインストレート（富士の象徴、1,475m → 簡略70単位）
   {
     id: "S01", type: "straight", name: "メインストレート",
-    length: 70, elevationStart: 0, elevationEnd: 0
+    tStart: 0.000, tEnd: 0.100
   },
-
-  // T01: TGRコーナー（旧1コーナー）- 急角度の右、フルブレーキングポイント
   {
     id: "T01", type: "corner", name: "TGRコーナー",
-    direction: "right", angle: 105, radius: 4.0,
-    elevationStart: 0, elevationEnd: -1.0,
+    tStart: 0.100, tEnd: 0.250,
     difficulty: 5, driftRingSpeed: 1.3, driftTargetSize: 38
   },
-
-  // S02: T01→T02 接続直線
-  {
-    id: "S02", type: "straight", name: "T1-T2接続",
-    length: 12, elevationStart: -1.0, elevationEnd: -1.0
-  },
-
-  // T02: 第2コーナー（緩い右、形状再現用・ドリフトなし）
   {
     id: "T02", type: "corner", name: "第2コーナー",
-    direction: "right", angle: 25, radius: 8.0,
-    elevationStart: -1.0, elevationEnd: -1.2,
+    tStart: 0.250, tEnd: 0.300,
     noDrift: true
   },
-
-  // S03: 第1セクター直線
-  {
-    id: "S03", type: "straight", name: "第1セクター",
-    length: 15, elevationStart: -1.2, elevationEnd: -1.2
-  },
-
-  // T03: コカ・コーラコーナー（左コーナー）- ドリフトポイント
   {
     id: "T03", type: "corner", name: "コカ・コーラコーナー",
-    direction: "left", angle: 60, radius: 6.0,
-    elevationStart: -1.2, elevationEnd: -1.5,
+    tStart: 0.300, tEnd: 0.400,
     difficulty: 3, driftRingSpeed: 1.0, driftTargetSize: 45
   },
-
-  // S04: 100Rアプローチ
   {
     id: "S04", type: "straight", name: "100Rアプローチ",
-    length: 18, elevationStart: -1.5, elevationEnd: -1.5
+    tStart: 0.400, tEnd: 0.450
   },
-
-  // T04: 100R（高速右コーナー複合）- ドリフトポイント
   {
     id: "T04", type: "corner", name: "100R",
-    direction: "right", angle: 70, radius: 7.0,
-    elevationStart: -1.5, elevationEnd: -2.0,
+    tStart: 0.450, tEnd: 0.500,
     difficulty: 4, driftRingSpeed: 1.1, driftTargetSize: 42
   },
-
-  // S05: ヘアピンブレーキングゾーン
   {
     id: "S05", type: "straight", name: "ヘアピンアプローチ",
-    length: 15, elevationStart: -2.0, elevationEnd: -2.2
+    tStart: 0.500, tEnd: 0.550
   },
-
-  // T05: ADVANコーナー（ヘアピン）- 最低速ポイント、ドリフトポイント
   {
     id: "T05", type: "corner", name: "ADVANコーナー",
-    direction: "right", angle: 140, radius: 3.0,
-    elevationStart: -2.2, elevationEnd: -2.0,
+    tStart: 0.550, tEnd: 0.650,
     difficulty: 5, driftRingSpeed: 1.4, driftTargetSize: 36
   },
-
-  // S06: バックストレート（加速区間）
   {
     id: "S06", type: "straight", name: "バックストレート",
-    length: 30, elevationStart: -2.0, elevationEnd: -1.0
+    tStart: 0.650, tEnd: 0.750
   },
-
-  // T06: 300R（高速右、形状再現用・ドリフトなし）
   {
     id: "T06", type: "corner", name: "300R",
-    direction: "right", angle: 35, radius: 10.0,
-    elevationStart: -1.0, elevationEnd: -0.5,
+    tStart: 0.750, tEnd: 0.800,
     noDrift: true
   },
-
-  // S07: 全開区間
-  {
-    id: "S07", type: "straight", name: "全開区間",
-    length: 18, elevationStart: -0.5, elevationEnd: 0
-  },
-
-  // T07: ダンロップシケイン方向（左、形状再現用・ドリフトなし）
   {
     id: "T07", type: "corner", name: "ダンロップコーナー",
-    direction: "left", angle: 35, radius: 8.0,
-    elevationStart: 0, elevationEnd: 0.5,
+    tStart: 0.800, tEnd: 0.850,
     noDrift: true
   },
-
-  // S08: セクター3（急上り区間）
-  {
-    id: "S08", type: "straight", name: "セクター3",
-    length: 12, elevationStart: 0.5, elevationEnd: 1.0
-  },
-
-  // T08: 最終コーナー - ドリフトポイント（脱出速度がストレートに直結）
   {
     id: "T08", type: "corner", name: "最終コーナー",
-    direction: "right", angle: 80, radius: 5.0,
-    elevationStart: 1.0, elevationEnd: 0.5,
+    tStart: 0.850, tEnd: 0.950,
     difficulty: 4, driftRingSpeed: 1.2, driftTargetSize: 40
   },
-
-  // S09: 最終ストレート（メインストレートに合流）
   {
     id: "S09", type: "straight", name: "最終ストレート",
-    length: 25, elevationStart: 0.5, elevationEnd: 0
+    tStart: 0.950, tEnd: 1.000
   }
 ];
 

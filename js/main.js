@@ -213,16 +213,17 @@
     var segInfo = courseData.segLookup.getSegmentAt(distance);
     var seg = segInfo.segment;
     
-    // Elevation effect
-    // Keep consistent with course.js where elevation is scaled for visuals
-    if (seg.elevationStart !== undefined && seg.elevationEnd !== undefined) {
-      var elevDiff = (seg.elevationEnd - seg.elevationStart) * ELEVATION_SCALE;
-      var segLength = seg.type === "straight" ? seg.length : (seg.radius * seg.angle * Math.PI / 180);
-      if (segLength > 0) {
-        var grade = elevDiff / segLength;
-        currentSpeed *= (1.0 - grade * 0.3);
-      }
-    }
+    // Elevation effect: use spline Y-gradient for speed adjustment
+    // Sample two nearby points on the spline to estimate grade
+    var totalDist = courseData.segLookup.totalDist;
+    var tNow = ((distance % totalDist) + totalDist) % totalDist / totalDist;
+    var tAhead = ((distance + 2.0) % totalDist) / totalDist;
+    if (tAhead < 0) tAhead += 1;
+    if (tAhead > 1) tAhead -= 1;
+    var ptNow = courseData.spline.getPointAt(tNow);
+    var ptAhead = courseData.spline.getPointAt(tAhead);
+    var grade = (ptAhead.y - ptNow.y) / 2.0;
+    currentSpeed *= (1.0 - grade * 0.3);
     
     // Edge penalty
     if (Math.abs(lateralOffset) > ROAD_HALF_WIDTH * 0.85) {

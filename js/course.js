@@ -5,85 +5,20 @@
 
 var CourseBuilder = (function() {
   
-  // Build the course path from segments
-  function buildCoursePath(segments) {
+  // Build the course path from explicit control points
+  // Uses COURSE_CONTROL_POINTS for guaranteed spatial closure and no overlap
+  function buildCoursePath() {
+    var controlPts = COURSE_CONTROL_POINTS;
     var points = [];
-    var elevations = [];
-    var segmentMeta = []; // maps point index to segment info
     
-    var pos = new THREE.Vector3(0, 0, 0);
-    var dir = new THREE.Vector3(1, 0, 0); // initial direction: positive X (main straight)
-    var up = new THREE.Vector3(0, 1, 0);
-    
-    var totalDistance = 0;
-    var segmentStartDistances = [];
-    
-    points.push(pos.clone());
-    elevations.push(0);
-    
-    for (var i = 0; i < segments.length; i++) {
-      var seg = segments[i];
-      segmentStartDistances.push(totalDistance);
-      
-      // Apply elevation scaling to reduce extreme height changes
-      var elevStart = seg.elevationStart * ELEVATION_SCALE;
-      var elevEnd = seg.elevationEnd * ELEVATION_SCALE;
-      
-      if (seg.type === "straight") {
-        var steps = Math.max(2, Math.floor(seg.length / 2));
-        var stepLen = seg.length / steps;
-        
-        for (var s = 1; s <= steps; s++) {
-          var t = s / steps;
-          var elev = elevStart + (elevEnd - elevStart) * t;
-          var newPos = pos.clone().add(dir.clone().multiplyScalar(stepLen));
-          newPos.y = elev;
-          points.push(newPos.clone());
-          elevations.push(elev);
-          segmentMeta.push({ segIndex: i, segId: seg.id, type: "straight" });
-          pos.copy(newPos);
-          totalDistance += stepLen;
-        }
-        
-      } else if (seg.type === "corner") {
-        var angleRad = (seg.angle * Math.PI) / 180;
-        var sign = (seg.direction === "right") ? -1 : 1;
-        
-        // Number of arc steps
-        var arcSteps = Math.max(6, Math.floor(seg.angle / 3));
-        var stepAngle = angleRad / arcSteps;
-        
-        // Calculate arc length
-        var arcLength = seg.radius * angleRad;
-        var stepLen = arcLength / arcSteps;
-        
-        for (var s = 1; s <= arcSteps; s++) {
-          var t = s / arcSteps;
-          var elev = elevStart + (elevEnd - elevStart) * t;
-          
-          // Rotate direction
-          var rotAxis = up;
-          var rotAngle = sign * stepAngle;
-          dir.applyAxisAngle(rotAxis, rotAngle);
-          dir.normalize();
-          
-          var newPos = pos.clone().add(dir.clone().multiplyScalar(stepLen));
-          newPos.y = elev;
-          points.push(newPos.clone());
-          elevations.push(elev);
-          segmentMeta.push({ segIndex: i, segId: seg.id, type: "corner", cornerName: seg.name, difficulty: seg.difficulty });
-          pos.copy(newPos);
-          totalDistance += stepLen;
-        }
-      }
+    for (var i = 0; i < controlPts.length; i++) {
+      var cp = controlPts[i];
+      points.push(new THREE.Vector3(cp.x, cp.y, cp.z));
     }
     
     return {
       points: points,
-      elevations: elevations,
-      segmentMeta: segmentMeta,
-      totalDistance: totalDistance,
-      segmentStartDistances: segmentStartDistances
+      totalDistance: 0 // will be set from spline length
     };
   }
   
@@ -281,15 +216,16 @@ var CourseBuilder = (function() {
     var groundMat = new THREE.MeshLambertMaterial({ color: 0x2D6B27 });
     var ground = new THREE.Mesh(groundGeom, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -2.0;
+    ground.position.y = -2.5;
     scene.add(ground);
     
-    // Inner tarmac/grass area
-    var innerGeom = new THREE.PlaneGeometry(200, 200);
+    // Inner tarmac/grass area (centered on course)
+    // Course center is roughly (30, -35)
+    var innerGeom = new THREE.PlaneGeometry(120, 110);
     var innerMat = new THREE.MeshLambertMaterial({ color: 0x337733 });
     var inner = new THREE.Mesh(innerGeom, innerMat);
     inner.rotation.x = -Math.PI / 2;
-    inner.position.set(30, -1.95, 15);
+    inner.position.set(30, -2.45, -35);
     scene.add(inner);
     
     // Sky (bright blue daytime)
@@ -311,68 +247,74 @@ var CourseBuilder = (function() {
   }
   
   // ===== MT. FUJI (large, snow-capped, prominent) =====
+  // Positioned north of the track (positive Z direction from main straight)
   function buildMtFuji(scene) {
     var fujiGroup = new THREE.Group();
+    var fujiX = 30, fujiZ = 280; // North of track, visible from main straight
     
     // Mountain base (wider, darker)
     var baseGeom = new THREE.ConeGeometry(120, 20, 16);
     var baseMat = new THREE.MeshLambertMaterial({ color: 0x4A5A3A, transparent: true, opacity: 0.5 });
     var base = new THREE.Mesh(baseGeom, baseMat);
-    base.position.set(20, 5, -320);
+    base.position.set(fujiX, 5, fujiZ);
     fujiGroup.add(base);
     
     // Main mountain body (bluish-gray)
     var fujiGeom = new THREE.ConeGeometry(80, 55, 16);
     var fujiMat = new THREE.MeshLambertMaterial({ color: 0x6B7B9B, transparent: true, opacity: 0.75 });
     var fuji = new THREE.Mesh(fujiGeom, fujiMat);
-    fuji.position.set(20, 20, -320);
+    fuji.position.set(fujiX, 20, fujiZ);
     fujiGroup.add(fuji);
     
     // Snow cap (white, prominent)
     var snowGeom = new THREE.ConeGeometry(30, 18, 16);
     var snowMat = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.9 });
     var snow = new THREE.Mesh(snowGeom, snowMat);
-    snow.position.set(20, 42, -320);
+    snow.position.set(fujiX, 42, fujiZ);
     fujiGroup.add(snow);
     
     scene.add(fujiGroup);
   }
   
   // ===== GRANDSTANDS with SPECTATORS =====
-  function buildGrandstands(scene) {
+  // Positioned along main straight (P0 to P2, X=0..60, Z=0)
+  // "Outside" of main straight = positive Z side (north, toward pit)
+  // "Inside" of main straight = negative Z side (south, toward track interior)
+  function buildGrandstands(scene, spline) {
     var group = new THREE.Group();
     var standColor = 0x556677;
     var seatColors = [0xDD2222, 0x2255CC, 0xFFCC00, 0x22AA44, 0xFFFFFF, 0xFF6600];
     
-    // Main Grandstand (3 tiers, outside of main straight)
+    // Main Grandstand (3 tiers, south side of main straight = inside track)
+    // Track interior is -Z direction from main straight
     for (var tier = 0; tier < 3; tier++) {
-      var width = 55 - tier * 3;
+      var width = 50 - tier * 3;
       var height = 2.5;
       var depth = 3;
       var geom = new THREE.BoxGeometry(width, height, depth);
       var mat = new THREE.MeshLambertMaterial({ color: standColor });
       var mesh = new THREE.Mesh(geom, mat);
-      mesh.position.set(35, tier * height + height / 2 - 1.5, -(ROAD_HALF_WIDTH + 2.5 + tier * (depth + 0.2)));
+      mesh.position.set(30, tier * height + height / 2 - 2, -(ROAD_HALF_WIDTH + 3 + tier * (depth + 0.2)));
       group.add(mesh);
     }
     
     // Grandstand roof
-    var roofGeom = new THREE.BoxGeometry(58, 0.3, 12);
+    var roofGeom = new THREE.BoxGeometry(53, 0.3, 12);
     var roofMat = new THREE.MeshLambertMaterial({ color: 0x334455 });
     var roof = new THREE.Mesh(roofGeom, roofMat);
-    roof.position.set(35, 7, -(ROAD_HALF_WIDTH + 6));
+    roof.position.set(30, 6, -(ROAD_HALF_WIDTH + 7));
     group.add(roof);
     
     // Roof support pillars
     var pillarGeom = new THREE.CylinderGeometry(0.15, 0.15, 8, 6);
     var pillarMat = new THREE.MeshLambertMaterial({ color: 0x666677 });
-    for (var p = 0; p < 8; p++) {
+    for (var p = 0; p < 7; p++) {
       var pillar = new THREE.Mesh(pillarGeom, pillarMat);
-      pillar.position.set(8 + p * 7, 3, -(ROAD_HALF_WIDTH + 2));
+      pillar.position.set(6 + p * 8, 2, -(ROAD_HALF_WIDTH + 3));
       group.add(pillar);
     }
     
-    // Spectators on main grandstand (colored cubes via InstancedMesh)
+    // Spectators (colored cubes via InstancedMesh)
     var specGeom = new THREE.BoxGeometry(0.35, 0.5, 0.25);
     var totalSpecs = 400;
     var specsPerColor = Math.floor(totalSpecs / seatColors.length);
@@ -385,9 +327,9 @@ var CourseBuilder = (function() {
         var sTier = Math.floor(Math.random() * 3);
         var h = 2.5;
         dummy.position.set(
-          7 + Math.random() * 52,
-          sTier * h + h - 1.2,
-          -(ROAD_HALF_WIDTH + 1.5 + sTier * 3.2 + Math.random() * 2)
+          5 + Math.random() * 48,
+          sTier * h + h - 1.5,
+          -(ROAD_HALF_WIDTH + 2 + sTier * 3.2 + Math.random() * 2)
         );
         dummy.updateMatrix();
         inst.setMatrixAt(si, dummy.matrix);
@@ -396,11 +338,11 @@ var CourseBuilder = (function() {
       group.add(inst);
     }
     
-    // Secondary Grandstand (inner/left side of main straight)
+    // Secondary Grandstand (north side = pit side)
     var innerStandGeom = new THREE.BoxGeometry(35, 3, 3);
     var innerStandMat = new THREE.MeshLambertMaterial({ color: 0x556677 });
     var innerStand = new THREE.Mesh(innerStandGeom, innerStandMat);
-    innerStand.position.set(30, 0, ROAD_HALF_WIDTH + 3);
+    innerStand.position.set(30, -0.5, ROAD_HALF_WIDTH + 4);
     group.add(innerStand);
     
     // Inner grandstand spectators
@@ -411,8 +353,8 @@ var CourseBuilder = (function() {
       for (var si2 = 0; si2 < 40; si2++) {
         dummy2.position.set(
           12 + Math.random() * 30,
-          1.7 + Math.random() * 0.3,
-          ROAD_HALF_WIDTH + 1.5 + Math.random() * 2
+          1.2 + Math.random() * 0.3,
+          ROAD_HALF_WIDTH + 2 + Math.random() * 2
         );
         dummy2.updateMatrix();
         inst2.setMatrixAt(si2, dummy2.matrix);
@@ -425,42 +367,43 @@ var CourseBuilder = (function() {
   }
   
   // ===== PIT BUILDINGS & CONTROL TOWER =====
-  function buildPitBuildings(scene) {
+  // North side of main straight (positive Z)
+  function buildPitBuildings(scene, spline) {
     var group = new THREE.Group();
     
-    // Main pit building
-    var pitGeom = new THREE.BoxGeometry(50, 3.5, 6);
+    // Main pit building (north side of main straight)
+    var pitGeom = new THREE.BoxGeometry(45, 3.5, 6);
     var pitMat = new THREE.MeshLambertMaterial({ color: 0x445566 });
     var pit = new THREE.Mesh(pitGeom, pitMat);
-    pit.position.set(30, 0.5, ROAD_HALF_WIDTH + 8);
+    pit.position.set(30, -0.5, ROAD_HALF_WIDTH + 9);
     group.add(pit);
     
     // Pit roof
-    var pitRoofGeom = new THREE.BoxGeometry(52, 0.2, 9);
+    var pitRoofGeom = new THREE.BoxGeometry(47, 0.2, 9);
     var pitRoofMat = new THREE.MeshLambertMaterial({ color: 0x333344 });
     var pitRoof = new THREE.Mesh(pitRoofGeom, pitRoofMat);
-    pitRoof.position.set(30, 3, ROAD_HALF_WIDTH + 7);
+    pitRoof.position.set(30, 2, ROAD_HALF_WIDTH + 8);
     group.add(pitRoof);
     
     // Pit lane wall separator
-    var wallGeom = new THREE.BoxGeometry(45, 0.4, 0.15);
+    var wallGeom = new THREE.BoxGeometry(40, 0.4, 0.15);
     var wallMat = new THREE.MeshLambertMaterial({ color: 0xCCCCCC });
     var wall = new THREE.Mesh(wallGeom, wallMat);
-    wall.position.set(30, -0.3, ROAD_HALF_WIDTH + 1.2);
+    wall.position.set(30, -1.3, ROAD_HALF_WIDTH + 2);
     group.add(wall);
     
     // Control tower
     var towerGeom = new THREE.BoxGeometry(6, 8, 5);
     var towerMat = new THREE.MeshLambertMaterial({ color: 0x556677 });
     var tower = new THREE.Mesh(towerGeom, towerMat);
-    tower.position.set(3, 2.5, ROAD_HALF_WIDTH + 6);
+    tower.position.set(3, 1.5, ROAD_HALF_WIDTH + 7);
     group.add(tower);
     
     // Tower windows (glass front)
     var winGeom = new THREE.BoxGeometry(5.5, 2.5, 0.1);
     var winMat = new THREE.MeshLambertMaterial({ color: 0x88BBDD, transparent: true, opacity: 0.6 });
     var win = new THREE.Mesh(winGeom, winMat);
-    win.position.set(3, 5, ROAD_HALF_WIDTH + 3.5);
+    win.position.set(3, 4, ROAD_HALF_WIDTH + 4.5);
     group.add(win);
     
     scene.add(group);
@@ -488,9 +431,9 @@ var CourseBuilder = (function() {
       var tSide = (Math.random() > 0.5) ? 1 : -1;
       var tDist = ROAD_HALF_WIDTH + 6 + Math.random() * 30;
       var treePos = tPoint.clone().add(tRight.clone().multiplyScalar(tSide * tDist));
-      treePos.y = -2.0;
-      // Skip trees in grandstand/pit area
-      if (treePos.x > -5 && treePos.x < 75 && Math.abs(treePos.z) < 20) continue;
+      treePos.y = -2.5;
+      // Skip trees in grandstand/pit area (main straight runs X=0..60, Z~0)
+      if (treePos.x > -5 && treePos.x < 65 && treePos.z > -8 && treePos.z < 18) continue;
       treePositions.push(treePos);
     }
     
@@ -498,8 +441,9 @@ var CourseBuilder = (function() {
     for (var bi = 0; bi < 100; bi++) {
       var bAngle = Math.random() * Math.PI * 2;
       var bDist = 60 + Math.random() * 140;
-      var bPos = new THREE.Vector3(30 + Math.cos(bAngle) * bDist, -2.0, 20 + Math.sin(bAngle) * bDist);
-      if (bPos.x > -5 && bPos.x < 75 && Math.abs(bPos.z) < 20) continue;
+      // Center backdrop trees around course center (30, -35)
+      var bPos = new THREE.Vector3(30 + Math.cos(bAngle) * bDist, -2.5, -35 + Math.sin(bAngle) * bDist);
+      if (bPos.x > -5 && bPos.x < 65 && bPos.z > -8 && bPos.z < 18) continue;
       treePositions.push(bPos);
     }
     
@@ -565,14 +509,14 @@ var CourseBuilder = (function() {
   // ===== TIRE BARRIERS at key corners =====
   function buildTireBarriers(scene, spline) {
     var up = new THREE.Vector3(0, 1, 0);
-    var barrierGeom = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 8);
+    var barrierGeom = new THREE.CylinderGeometry(0.2, 0.2, 0.3, 8);
     var blackMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
     var redMat = new THREE.MeshLambertMaterial({ color: 0xCC2222 });
     
-    // TGR corner area and ADVAN hairpin area
+    // TGR corner area (t=0.10-0.25) and ADVAN hairpin area (t=0.55-0.65)
     var cornerRanges = [
-      { start: 0.21, end: 0.27, count: 18 },
-      { start: 0.52, end: 0.62, count: 22 }
+      { start: 0.12, end: 0.22, count: 18 },
+      { start: 0.56, end: 0.64, count: 22 }
     ];
     
     for (var cr = 0; cr < cornerRanges.length; cr++) {
@@ -582,13 +526,14 @@ var CourseBuilder = (function() {
         var tPoint = spline.getPointAt(tt);
         var tTangent = spline.getTangentAt(tt);
         var tRight = new THREE.Vector3().crossVectors(tTangent, up).normalize();
-        var tOffset = ROAD_HALF_WIDTH + 0.6;
+        var tOffset = ROAD_HALF_WIDTH + 0.4;
         for (var row = 0; row < 2; row++) {
-          var tirePos = tPoint.clone().add(tRight.clone().multiplyScalar(tOffset + row * 0.5));
+          var tirePos = tPoint.clone().add(tRight.clone().multiplyScalar(tOffset + row * 0.35));
           var tireMat = (row === 0 && ti % 3 === 0) ? redMat : blackMat;
           var tire = new THREE.Mesh(barrierGeom, tireMat);
           tire.position.copy(tirePos);
-          tire.position.y += 0.25 + row * 0.5;
+          // Keep tires at road level
+          tire.position.y = tPoint.y + 0.15 + row * 0.3;
           tire.rotation.x = Math.PI / 2;
           scene.add(tire);
         }
@@ -598,9 +543,11 @@ var CourseBuilder = (function() {
   
   // ===== MAIN BUILD FUNCTION =====
   function build(scene) {
-    var pathData = buildCoursePath(COURSE_SEGMENTS);
+    var pathData = buildCoursePath();
     var spline = createSpline(pathData.points);
     var splineLength = spline.getLength();
+    
+    console.log('Course spline length: ' + splineLength.toFixed(1) + ' units');
     
     // Road
     var road = buildRoadMesh(spline, splineLength);
@@ -629,10 +576,10 @@ var CourseBuilder = (function() {
     buildMtFuji(scene);
     
     // Grandstands with spectators
-    buildGrandstands(scene);
+    buildGrandstands(scene, spline);
     
     // Pit buildings & control tower
-    buildPitBuildings(scene);
+    buildPitBuildings(scene, spline);
     
     // Forest trees
     buildForestTrees(scene, spline);
@@ -643,8 +590,8 @@ var CourseBuilder = (function() {
     // Tire barriers at key corners
     buildTireBarriers(scene, spline);
     
-    // Build segment distance lookup
-    var segLookup = buildSegmentLookup(pathData, spline, splineLength);
+    // Build segment distance lookup (t-fraction based)
+    var segLookup = buildSegmentLookup(spline, splineLength);
     
     // Generate minimap 2D points
     var minimapPoints = generateMinimapPoints(spline);
@@ -659,38 +606,21 @@ var CourseBuilder = (function() {
   }
   
   // Build a lookup: for a given distance along the course, which segment are we in?
-  // NOTE: CatmullRomCurve3.getPointAt(t) uses arc-length parameterization, so we must
-  // also treat spline arc length as the canonical distance.
-  function buildSegmentLookup(pathData, spline, splineLength) {
+  // Uses t-fraction based segment boundaries from COURSE_SEGMENTS.
+  // Since getPointAt(t) uses arc-length parameterization, distance/totalDist = t.
+  function buildSegmentLookup(spline, splineLength) {
     var segments = COURSE_SEGMENTS;
-    var rawCumulDist = [];
-    var d = 0;
     
-    // Raw cumulative distances based on segment definitions
-    for (var i = 0; i < segments.length; i++) {
-      var seg = segments[i];
-      rawCumulDist.push(d);
-      if (seg.type === "straight") {
-        d += seg.length;
-      } else {
-        d += seg.radius * (seg.angle * Math.PI / 180);
-      }
-    }
-    rawCumulDist.push(d);
-    var rawTotal = d;
-    
-    // Scale to match spline arc length
-    var scale = (rawTotal > 0) ? (splineLength / rawTotal) : 1;
+    // Convert t-fractions to cumulative distances
     var cumulDist = [];
-    for (var j = 0; j < rawCumulDist.length; j++) {
-      cumulDist.push(rawCumulDist[j] * scale);
+    for (var i = 0; i < segments.length; i++) {
+      cumulDist.push(segments[i].tStart * splineLength);
     }
+    cumulDist.push(splineLength); // end
     
     return {
       cumulDist: cumulDist,
       totalDist: splineLength,
-      rawTotal: rawTotal,
-      scale: scale,
       getSegmentAt: function(distance) {
         var total = splineLength;
         var dist = ((distance % total) + total) % total;
